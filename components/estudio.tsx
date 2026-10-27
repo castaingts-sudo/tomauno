@@ -266,6 +266,7 @@ export function NuevoProyecto({
   onQuitarBrief,
   onGenerar,
   onCancelar,
+  pasoInicial = 0,
 }: {
   brief: Brief;
   setBrief: (f: (b: Brief) => Brief) => void;
@@ -275,8 +276,9 @@ export function NuevoProyecto({
   onQuitarBrief: () => void;
   onGenerar: () => void;
   onCancelar: () => void;
+  pasoInicial?: number;
 }) {
-  const [paso, setPaso] = useState(0);
+  const [paso, setPaso] = useState(pasoInicial);
   const set = <K extends keyof Brief>(k: K, v: Brief[K]) => setBrief((b) => ({ ...b, [k]: v }));
   const equipo = equipoDe(brief);
   const listo = brief.idea.trim().length > 0;

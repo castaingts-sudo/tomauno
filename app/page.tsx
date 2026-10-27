@@ -9,6 +9,39 @@ import { download, slug, toMarkdown } from "@/lib/export";
 import type { Brief, Operador, Paquete, Proyecto } from "@/lib/types";
 
 const STORAGE_KEY = "toma-uno:proyectos";
+const BORRADOR_KEY = "toma-uno:borrador";
+const LECTURAS_KEY = "toma-uno:lecturas";
+
+type Lectura = { campos: Partial<Brief> & { camaras?: number }; documento?: string; archivo: string };
+
+async function huella(file: File): Promise<string> {
+  const h = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+  return Array.from(new Uint8Array(h), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+const base64De = (file: File) =>
+  new Promise<string>((ok, fail) => {
+    const r = new FileReader();
+    r.onload = () => ok(String(r.result).split(",")[1] ?? "");
+    r.onerror = () => fail(r.error);
+    r.readAsDataURL(file);
+  });
+
+// Briefs ya leídos, por huella del archivo: volver a subir el mismo no gasta otra lectura.
+function leerLecturas(): Record<string, Lectura> {
+  try {
+    return JSON.parse(localStorage.getItem(LECTURAS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function guardarLectura(hash: string, l: Lectura) {
+  const todas = Object.entries({ ...leerLecturas(), [hash]: l }).slice(-10);
+  try {
+    localStorage.setItem(LECTURAS_KEY, JSON.stringify(Object.fromEntries(todas)));
+  } catch {}
+}
 
 const TABS = [
   ["resumen", "Resumen"],
@@ -64,8 +97,25 @@ export default function Home() {
 
   useEffect(() => {
     setHistorial(loadProyectos());
+    try {
+      const b = JSON.parse(localStorage.getItem(BORRADOR_KEY) || "null");
+      if (b?.idea !== undefined) setBrief(b);
+    } catch {}
     setListo(true);
   }, []);
+
+  // El formulario sobrevive a recargas y a generaciones fallidas.
+  useEffect(() => {
+    if (!listo) return;
+    try {
+      localStorage.setItem(BORRADOR_KEY, JSON.stringify(brief));
+    } catch {
+      try {
+        const { pdf: _pdf, ...sinPdf } = brief;
+        localStorage.setItem(BORRADOR_KEY, JSON.stringify(sinPdf));
+      } catch {}
+    }
+  }, [brief, listo]);
 
   // Cada vista arriba de la página, como cambiar de pantalla.
   const vista = cargando ? "generando" : proyecto ? "proyecto" : creando ? "nuevo" : "tablero";
@@ -78,13 +128,21 @@ export default function Home() {
     setLeyendo(true);
     setError("");
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/extract", { method: "POST", body: fd });
-      const j = await res.json().catch(() => ({ error: `Error ${res.status}` }));
-      if (!res.ok) throw new Error(j.error || `Error ${res.status}`);
+      const hash = await huella(file).catch(() => "");
+      const guardada = hash ? leerLecturas()[hash] : undefined;
+      let j: Lectura & { pdf?: string };
+      if (guardada) {
+        j = { ...guardada, pdf: /\.pdf$/i.test(file.name) ? await base64De(file) : undefined };
+      } else {
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch("/api/extract", { method: "POST", body: fd });
+        j = await res.json().catch(() => ({ error: `Error ${res.status}` }));
+        if (!res.ok) throw new Error((j as { error?: string }).error || `Error ${res.status}`);
+        if (hash) guardarLectura(hash, { campos: j.campos, documento: j.documento, archivo: j.archivo });
+      }
       // Solo se sobrescriben los campos que el brief trae con contenido.
-      const { camaras, ...campos } = j.campos as Partial<Brief> & { camaras?: number };
+      const { camaras, ...campos } = j.campos;
       if (!campos.diasRodaje) delete campos.diasRodaje;
       const llenos = Object.fromEntries(Object.entries(campos).filter(([, v]) => v !== "" && v != null));
       setBrief((b) => {
@@ -102,6 +160,44 @@ export default function Home() {
 
   const quitarBrief = () => setBrief((b) => ({ ...b, archivo: undefined, documento: undefined, pdf: undefined }));
 
+  // Corre una etapa en streaming; "antes" es lo ya escrito, para que la sala de control siga mostrando todo.
+  async function correrEtapa(etapa: 1 | 2, previo?: string, antes = ""): Promise<string> {
+    const res = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ brief, etapa, previo }),
+    });
+    if (!res.ok || !res.body) {
+      const j = await res.json().catch(() => ({}));
+      throw new Error(j.error || `Error ${res.status}`);
+    }
+    setDemo(res.headers.get("X-Toma-Uno-Mode") === "demo");
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let text = "";
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      text += decoder.decode(value, { stream: true });
+      setTexto(antes + text);
+    }
+    const errIdx = text.indexOf("[[ERROR]]");
+    if (errIdx !== -1) throw new Error(text.slice(errIdx + 9));
+    const finIdx = text.lastIndexOf("[[FIN]]");
+    if (finIdx === -1) {
+      throw new Error(`La ${etapa === 1 ? "primera" : "segunda"} etapa se cortó antes de terminar (el servidor tiene un límite de 5 minutos). Vuelve a intentarlo.`);
+    }
+    return text.slice(0, finIdx);
+  }
+
+  function leerParte(t: string): Partial<Paquete> {
+    try {
+      return parsePaquete(t) as Partial<Paquete>;
+    } catch {
+      throw new Error("La respuesta llegó con un formato que no pude leer. Vuelve a generar, casi siempre sale bien al segundo intento.");
+    }
+  }
+
   async function generar() {
     setCargando(true);
     setError("");
@@ -109,34 +205,15 @@ export default function Home() {
     setInicio(Date.now());
     setAhora(Date.now());
     try {
-      const res = await fetch("/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(brief),
-      });
-      if (!res.ok || !res.body) {
-        const j = await res.json().catch(() => ({}));
-        throw new Error(j.error || `Error ${res.status}`);
-      }
-      setDemo(res.headers.get("X-Toma-Uno-Mode") === "demo");
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let text = "";
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        text += decoder.decode(value, { stream: true });
-        setTexto(text);
-      }
-      const errIdx = text.indexOf("[[ERROR]]");
-      if (errIdx !== -1) throw new Error(text.slice(errIdx + 9));
-      const finIdx = text.lastIndexOf("[[FIN]]");
-      if (finIdx === -1) {
-        throw new Error("La generación se cortó antes de terminar (el servidor tiene un límite de 5 minutos). Vuelve a intentarlo; si se repite, baja la duración o el detalle del video.");
-      }
+      // Etapa 1: guion y tomas. Etapa 2: plan, equipo y presupuesto, con la etapa 1 como contexto.
+      const t1 = await correrEtapa(1);
+      const parte1 = leerParte(t1);
+      const previo = JSON.stringify({ resumen: parte1.resumen, guionAudiovisual: parte1.guionAudiovisual, guionTecnico: parte1.guionTecnico });
+      const t2 = await correrEtapa(2, previo, t1);
+      const parte2 = leerParte(t2);
       let paquete: Paquete;
       try {
-        paquete = completarPaquete(parsePaquete(text.slice(0, finIdx)) as Partial<Paquete>);
+        paquete = completarPaquete({ ...parte1, ...parte2 });
       } catch {
         throw new Error("La respuesta llegó con un formato que no pude leer. Vuelve a generar, casi siempre sale bien al segundo intento.");
       }
@@ -148,6 +225,9 @@ export default function Home() {
       setProyecto(nuevo);
       setCreando(false);
       setBrief(EMPTY);
+      try {
+        localStorage.removeItem(BORRADOR_KEY);
+      } catch {}
       setTab("storyboard");
       dibujarStoryboard(nuevo);
     } catch (err) {
@@ -258,6 +338,7 @@ export default function Home() {
           onQuitarBrief={quitarBrief}
           onGenerar={generar}
           onCancelar={() => setCreando(false)}
+          pasoInicial={error ? 2 : 0}
         />
       )}
 

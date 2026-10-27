@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { SYSTEM_PROMPT, userPrompt } from "@/lib/prompt";
+import { SYSTEM_PROMPT, etapaPrompt, userPrompt } from "@/lib/prompt";
 import { samplePaquete } from "@/lib/sample";
 import type { Brief } from "@/lib/types";
 
@@ -10,9 +10,14 @@ const MODEL = process.env.CLAUDE_MODEL || "claude-opus-5-5";
 // Marca de respuesta completa: si no llega, Vercel cortó la función por tiempo.
 const FIN = "\n[[FIN]]";
 
+const ETAPA1 = ["resumen", "guionAudiovisual", "guionTecnico", "storyboard"] as const;
+
 // Devuelve el texto del modelo en streaming; el cliente arma el JSON al final.
+// Va en dos etapas (guion y tomas; luego plan, equipo y presupuesto) para que cada una quepa en el límite de 5 min.
 export async function POST(req: Request) {
-  const brief = (await req.json()) as Brief;
+  const body = (await req.json()) as { brief: Brief; etapa?: 1 | 2; previo?: string };
+  const { brief, previo } = body;
+  const etapa = body.etapa === 2 ? 2 : 1;
   if (!brief?.idea?.trim()) {
     return Response.json({ error: "Escribe la idea del video." }, { status: 400 });
   }
@@ -21,7 +26,10 @@ export async function POST(req: Request) {
 
   // Sin clave: modo demo para probar la interfaz sin gastar.
   if (!process.env.ANTHROPIC_API_KEY) {
-    const body = JSON.stringify(samplePaquete(brief));
+    const muestra = samplePaquete(brief) as unknown as Record<string, unknown>;
+    const body = JSON.stringify(
+      Object.fromEntries(Object.entries(muestra).filter(([k]) => (ETAPA1 as readonly string[]).includes(k) === (etapa === 1))),
+    );
     return new Response(
       new ReadableStream({
         async start(controller) {
@@ -57,7 +65,7 @@ export async function POST(req: Request) {
                 ...(brief.pdf
                   ? [{ type: "document" as const, source: { type: "base64" as const, media_type: "application/pdf" as const, data: brief.pdf } }]
                   : []),
-                { type: "text" as const, text: userPrompt(brief) },
+                { type: "text" as const, text: `${userPrompt(brief)}\n\n${etapaPrompt(etapa, previo)}` },
               ],
             },
           ],

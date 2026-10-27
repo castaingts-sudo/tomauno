@@ -57,6 +57,18 @@ ${equipoDe(b)
   }${b.pdf ? `\n\nEl brief del cliente (${b.archivo || "PDF"}) va adjunto como documento.` : ""}`;
 }
 
+// Qué parte del paquete se escribe en cada llamada.
+export function etapaPrompt(etapa: 1 | 2, previo?: string): string {
+  if (etapa === 1) {
+    return "ETAPA 1 DE 2. En esta respuesta escribe SOLO un objeto JSON con las claves \"resumen\", \"guionAudiovisual\", \"guionTecnico\" y \"storyboard\" (en ese orden, con la forma indicada). El resto del paquete se escribe después.";
+  }
+  return `ETAPA 2 DE 2. La primera parte del paquete ya está escrita y aprobada:
+<primera_parte>
+${previo ?? ""}
+</primera_parte>
+Ahora escribe SOLO un objeto JSON con las claves "planRodaje", "equipo", "crew", "locaciones", "presupuesto", "postproduccion" y "checklist" (en ese orden, con la forma indicada), totalmente coherente con esa primera parte: usa sus ids de plano, sus escenas, locaciones y operadores. Todos los planos deben aparecer en el plan de rodaje.`;
+}
+
 export const EXTRACT_PROMPT = `Lee el brief audiovisual adjunto y llena los campos del formulario de preproducción en español. "idea" es un resumen claro de 2 a 4 frases del video que se quiere lograr (concepto, cliente, público). "duracion", "formato", "estilo" y "presupuesto" salen del brief; si no se mencionan, deja una cadena vacía (presupuesto: "bajo", "medio" o "alto" si se puede inferir, si no "medio"). "fechaRodaje" es la fecha del primer día de grabación en formato AAAA-MM-DD si el brief la menciona (cadena vacía si no); "diasRodaje" es cuántos días de grabación (0 si no se sabe). "incluirDron" es true si el brief menciona dron o tomas aéreas. "camaras" es cuántos operadores de cámara (sin contar el dron) pide o implica el brief; 0 si no se puede saber. "notas" resume datos prácticos: cliente, idiomas y subtítulos, talento, locaciones, días de rodaje y entregables.`;
 
 export const BRIEF_FIELDS_SCHEMA = {
