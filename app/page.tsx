@@ -381,8 +381,8 @@ function ProyectoHead({ proyecto, onVolver }: { proyecto: Proyecto; onVolver: ()
         <h2>{p.resumen.titulo}</h2>
         <p>{p.resumen.logline}</p>
         <div className="st-phead-chips">
-          <span className="chip">{p.resumen.duracion || b.duracion}</span>
-          <span className="chip">{p.resumen.formato || b.formato}</span>
+          <span className="chip" title={p.resumen.duracion || b.duracion}>{p.resumen.duracion || b.duracion}</span>
+          <span className="chip" title={p.resumen.formato || b.formato}>{p.resumen.formato || b.formato}</span>
           <span className="chip">{p.guionAudiovisual.length} escenas</span>
           <span className="chip">{p.guionTecnico.length} tomas</span>
           <span className="chip">{p.planRodaje.length} {p.planRodaje.length === 1 ? "día" : "días"}</span>

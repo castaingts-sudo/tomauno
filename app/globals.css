@@ -552,3 +552,5 @@ select optgroup { color: var(--text); background: var(--panel-solid); }
 .crew-gear-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .crew-gear-pair select, .crew-gear-pair input { margin: 0; padding: 8px 10px; font-size: 13px; }
 .st-seg { display: flex; width: fit-content; }
+.st-phead-chips .chip { max-width: min(340px, 100%); overflow: hidden; text-overflow: ellipsis; }
+.st-phead-copy { min-width: 0; }
