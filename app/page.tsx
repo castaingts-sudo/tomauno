@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ajustarEquipo, equipoDe, tomasDe } from "@/lib/equipo";
+import { ajustarEquipo, ejemploEquipo, equipoDe, tomasDe } from "@/lib/equipo";
 import { completarPaquete, parsePaquete } from "@/lib/prompt";
 import { download, slug, toMarkdown } from "@/lib/export";
 import type { Brief, Operador, Paquete, Proyecto } from "@/lib/types";
@@ -572,7 +572,7 @@ function Resultado({ proyecto, tab, setTab, demo, onChange, dibujando }: { proye
 // Quién filma: define cuántas cámaras hay y a quién le llega cada hoja de llamado.
 function EquipoForm({ equipo, dron, onChange }: { equipo: Operador[]; dron: boolean; onChange: (eq: Operador[]) => void }) {
   const camaras = equipo.filter((o) => o.tipo === "camara").length;
-  const editar = (id: string, k: "nombre" | "contacto", v: string) => onChange(equipo.map((o) => (o.id === id ? { ...o, [k]: v } : o)));
+  const editar = (id: string, k: "nombre" | "contacto" | "equipo", v: string) => onChange(equipo.map((o) => (o.id === id ? { ...o, [k]: v } : o)));
   return (
     <fieldset className="crew-form">
       <legend>Equipo de rodaje</legend>
@@ -588,8 +588,12 @@ function EquipoForm({ equipo, dron, onChange }: { equipo: Operador[]; dron: bool
           <span>{o.rol}</span>
           <input placeholder="Nombre" value={o.nombre} onChange={(e) => editar(o.id, "nombre", e.target.value)} />
           <input placeholder="Teléfono" inputMode="tel" value={o.contacto} onChange={(e) => editar(o.id, "contacto", e.target.value)} />
+          {o.tipo !== "director" && (
+            <textarea className="crew-gear" rows={2} placeholder={ejemploEquipo(o)} value={o.equipo ?? ""} onChange={(e) => editar(o.id, "equipo", e.target.value)} />
+          )}
         </div>
       ))}
+      <p className="muted crew-hint">Con la cámara y lentes de cada quien, la IA arma tomas, storyboard y plan con ese equipo.</p>
     </fieldset>
   );
 }
@@ -601,7 +605,7 @@ function LinksEquipo({ proyecto, onChange }: { proyecto: Proyecto; onChange: (p:
   const [guardando, setGuardando] = useState(false);
   const [msg, setMsg] = useState("");
   const base = proyecto.equipoShare && typeof window !== "undefined" ? `${window.location.origin}/e/${proyecto.equipoShare.id}` : "";
-  const editar = (id: string, k: "nombre" | "contacto", v: string) =>
+  const editar = (id: string, k: "nombre" | "contacto" | "equipo", v: string) =>
     onChange({ ...proyecto, brief: { ...proyecto.brief, equipoRodaje: equipo.map((o) => (o.id === id ? { ...o, [k]: v } : o)) } });
 
   async function guardar() {
@@ -659,6 +663,9 @@ function LinksEquipo({ proyecto, onChange }: { proyecto: Proyecto; onChange: (p:
                   <div className="crew-row">
                     <input placeholder="Nombre" value={o.nombre} onChange={(e) => editar(o.id, "nombre", e.target.value)} />
                     <input placeholder="Teléfono" inputMode="tel" value={o.contacto} onChange={(e) => editar(o.id, "contacto", e.target.value)} />
+                    {o.tipo !== "director" && (
+                      <input className="crew-gear" placeholder={ejemploEquipo(o)} value={o.equipo ?? ""} onChange={(e) => editar(o.id, "equipo", e.target.value)} />
+                    )}
                   </div>
                 </div>
                 {url && (

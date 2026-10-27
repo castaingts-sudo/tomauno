@@ -121,3 +121,6 @@ tr.total td { font-weight: 700; border-top: 2px solid var(--text); }
 .crew-list li { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: flex-end; border-top: 1px solid var(--line); padding-top: 10px; }
 .crew-who { flex: 1 1 280px; }
 .crew-who .crew-row { margin-top: 6px; }
+.crew-row .crew-gear { grid-column: 1 / -1; font-size: 13px; }
+.crew-form .crew-row .crew-gear { grid-column: 2 / -1; resize: vertical; }
+.crew-hint { margin: 0; font-size: 12px; }

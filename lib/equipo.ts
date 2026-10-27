@@ -18,7 +18,7 @@ export const equipoDe = (b: Brief): Operador[] => b.equipoRodaje ?? equipoBase(1
 export function ajustarEquipo(actual: Operador[], camaras: number, dron: boolean): Operador[] {
   return equipoBase(camaras, dron).map((o) => {
     const prev = actual.find((x) => x.id === o.id);
-    return prev ? { ...o, nombre: prev.nombre, contacto: prev.contacto } : o;
+    return prev ? { ...o, nombre: prev.nombre, contacto: prev.contacto, equipo: prev.equipo } : o;
   });
 }
 
@@ -35,3 +35,7 @@ export function tomasDe(op: Operador, planos: Plano[], equipo: Operador[]): Plan
   if (porNombre.length) return porNombre;
   return equipo.filter((o) => o.tipo === "camara").length === 1 ? planos.filter((p) => !esAereo(p)) : [];
 }
+
+// Placeholder del campo de equipo según el rol.
+export const ejemploEquipo = (o: Operador) =>
+  o.tipo === "dron" ? "Dron (ej. Mavic 3 Cine, ND, 6 baterías)" : "Cámara y lentes (ej. FX3 · 24-70, 85 mm)";

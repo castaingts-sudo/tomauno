@@ -20,6 +20,7 @@ export interface Operador {
   tipo: "director" | "camara" | "dron";
   nombre: string;
   contacto: string;
+  equipo?: string; // cámara y lentes que trae (o modelo de dron)
 }
 
 export interface Resumen {

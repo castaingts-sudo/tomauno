@@ -65,3 +65,4 @@ body:has(.hoja) { background: #f4f3ef; color-scheme: light; }
 @media print {
   .hj-shot, .hj-card { break-inside: avoid; }
 }
+.hj-gear-line { display: block; font-size: 14px; color: var(--soft); }

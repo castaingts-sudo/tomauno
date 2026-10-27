@@ -34,6 +34,7 @@ function Contacto({ o }: { o: Operador }) {
   return (
     <li>
       <b>{o.rol}</b> {o.nombre && <span>· {o.nombre}</span>}
+      {o.equipo && <span className="hj-gear-line">{o.equipo}</span>}
       {o.contacto &&
         (esTel ? (
           <span className="hj-links">

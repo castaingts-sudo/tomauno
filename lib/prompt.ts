@@ -25,6 +25,7 @@ Reglas:
 - En el guion técnico, "vozEnOff" de cada plano es el fragmento de la locución que suena sobre ese plano.
 - El guion técnico desglosa cada escena en planos con nomenclatura estándar (PG, PE, PM, PMC, PP, PPP, PD, cenital, contrapicado...), movimiento (fijo, paneo, travelling, gimbal, dolly, órbita de dron, revelación...) y lente sugerido en mm.
 - "operador" es el rol EXACTO del equipo de rodaje que filma ese plano (uno de los roles de cámara o dron de la lista que se te da). Reparte para que las cámaras trabajen en paralelo: la Cámara A lleva el plano principal y la B coberturas, detalles y contraplanos (o la otra mitad de las tomas si son independientes); todo lo aéreo va al piloto de dron. Usa el mismo nombre en "camara".
+- Si un operador indica su cámara y lentes (o su dron), diseña sus planos SOLO con ese equipo: el "lente" de cada plano debe ser uno de sus lentes (o una focal dentro de su zoom) y "camara" el cuerpo que trae; aprovecha sus fortalezas (p. ej. tele para detalles y compresión, gran angular para espacios, cámara lenta si el cuerpo la permite) y asigna cada plano al operador cuyo equipo lo resuelve mejor. Respeta los límites de la aeronave indicada (altura, viento, sensor). En "equipo" lista primero lo que trae cada operador (con su rol en notas) y después solo lo que falte, marcado como "rentar" o "conseguir".
 - Un panel de storyboard por cada plano del guion técnico, con el mismo id.
 - El storyboard aquí solo lleva la descripción de cada cuadro; los dibujos se hacen aparte.
 - Si se pide dron: incluye planos aéreos con altura aproximada y maniobra, la aeronave y baterías en el equipo, y en locaciones los permisos y restricciones de espacio aéreo (autorización de la autoridad aeronáutica local, distancia a personas, aeropuertos, zonas restringidas, clima/viento).
@@ -43,7 +44,10 @@ Estilo visual: ${b.estilo || "a definir"}
 Presupuesto: ${b.presupuesto || "medio"}
 Incluir tomas con dron: ${b.incluirDron ? "sí" : "no"}
 Notas adicionales: ${b.notas || "ninguna"}
-Equipo de rodaje: ${equipoDe(b).map((o) => o.rol + (o.nombre ? ` (${o.nombre})` : "")).join(", ")}${
+Equipo de rodaje:
+${equipoDe(b)
+  .map((o) => `- ${o.rol}${o.nombre ? ` (${o.nombre})` : ""}${o.tipo !== "director" ? `: ${o.equipo?.trim() || "equipo a definir"}` : ""}`)
+  .join("\n")}${
     b.documento ? `\n\nBrief del cliente (${b.archivo || "documento"}):\n<brief>\n${b.documento}\n</brief>` : ""
   }${b.pdf ? `\n\nEl brief del cliente (${b.archivo || "PDF"}) va adjunto como documento.` : ""}`;
 }
