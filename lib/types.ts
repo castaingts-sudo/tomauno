@@ -8,6 +8,9 @@ export interface Brief {
   presupuesto: string; // bajo | medio | alto o una cifra
   incluirDron: boolean;
   notas: string;
+  archivo?: string; // nombre del brief subido
+  documento?: string; // texto completo del brief (Word/TXT/MD)
+  pdf?: string; // brief en PDF, base64 (no se guarda en el historial)
 }
 
 export interface Resumen {

@@ -26,6 +26,12 @@ input, textarea, select {
 }
 textarea { resize: vertical; }
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.drop { position: relative; border: 1px dashed var(--accent); border-radius: 10px; padding: 14px; text-align: center; color: var(--text) !important; cursor: pointer; margin-bottom: 16px !important; }
+.drop:hover { background: #221d0c; }
+.drop.busy { cursor: progress; opacity: 0.8; }
+.drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; margin: 0; }
+.file-chip { display: flex; justify-content: space-between; align-items: center; background: var(--bg); border: 1px solid var(--accent); border-radius: 10px; padding: 8px 12px; margin-bottom: 16px; font-size: 14px; }
+.file-chip .x { border: 0; background: none; color: var(--muted); font-size: 18px; padding: 0 4px; }
 label.check { display: flex; gap: 8px; align-items: center; color: var(--text); }
 label.check input { width: auto; margin: 0; }
 button { cursor: pointer; font: inherit; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--text); padding: 7px 12px; }

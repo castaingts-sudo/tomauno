@@ -47,7 +47,17 @@ export async function POST(req: Request) {
           betas: ["server-side-fallback-2026-07-01"],
           fallbacks: "default",
           system: SYSTEM_PROMPT,
-          messages: [{ role: "user", content: userPrompt(brief) }],
+          messages: [
+            {
+              role: "user",
+              content: [
+                ...(brief.pdf
+                  ? [{ type: "document" as const, source: { type: "base64" as const, media_type: "application/pdf" as const, data: brief.pdf } }]
+                  : []),
+                { type: "text" as const, text: userPrompt(brief) },
+              ],
+            },
+          ],
         });
         msgStream.on("text", (delta) => controller.enqueue(encoder.encode(delta)));
         const final = await msgStream.finalMessage();

@@ -26,7 +26,8 @@ Reglas:
 - Si se pide dron: incluye planos aéreos con altura aproximada y maniobra, la aeronave y baterías en el equipo, y en locaciones los permisos y restricciones de espacio aéreo (autorización de la autoridad aeronáutica local, distancia a personas, aeropuertos, zonas restringidas, clima/viento).
 - El plan de rodaje agrupa planos por locación y luz (hora dorada, etc.) para minimizar traslados.
 - El equipo y el presupuesto se ajustan al nivel de presupuesto pedido; los montos son estimados orientativos.
-- El checklist son tareas concretas de preproducción antes del día de rodaje.`;
+- El checklist son tareas concretas de preproducción antes del día de rodaje.
+- Si se adjunta un brief del cliente, es la fuente principal: respeta su concepto, mensajes clave, escaleta, textos de voz en off y testimoniales, locaciones, talento, idiomas/subtítulos, días de rodaje y entregables. Desarrolla y completa lo que falte sin contradecirlo.`;
 
 export function userPrompt(b: Brief): string {
   return `Idea del video: ${b.idea}
@@ -36,8 +37,27 @@ Formato / plataforma: ${b.formato || "a definir"}
 Estilo visual: ${b.estilo || "a definir"}
 Presupuesto: ${b.presupuesto || "medio"}
 Incluir tomas con dron: ${b.incluirDron ? "sí" : "no"}
-Notas adicionales: ${b.notas || "ninguna"}`;
+Notas adicionales: ${b.notas || "ninguna"}${
+    b.documento ? `\n\nBrief del cliente (${b.archivo || "documento"}):\n<brief>\n${b.documento}\n</brief>` : ""
+  }${b.pdf ? `\n\nEl brief del cliente (${b.archivo || "PDF"}) va adjunto como documento.` : ""}`;
 }
+
+export const EXTRACT_PROMPT = `Lee el brief audiovisual adjunto y llena los campos del formulario de preproducción en español. "idea" es un resumen claro de 2 a 4 frases del video que se quiere lograr (concepto, cliente, público). "duracion", "formato", "estilo" y "presupuesto" salen del brief; si no se mencionan, deja una cadena vacía (presupuesto: "bajo", "medio" o "alto" si se puede inferir, si no "medio"). "incluirDron" es true si el brief menciona dron o tomas aéreas. "notas" resume datos prácticos: cliente, idiomas y subtítulos, talento, locaciones, días de rodaje y entregables.`;
+
+export const BRIEF_FIELDS_SCHEMA = {
+  type: "object",
+  properties: {
+    idea: { type: "string" },
+    duracion: { type: "string" },
+    formato: { type: "string" },
+    estilo: { type: "string" },
+    presupuesto: { type: "string", enum: ["bajo", "medio", "alto"] },
+    incluirDron: { type: "boolean" },
+    notas: { type: "string" },
+  },
+  required: ["idea", "duracion", "formato", "estilo", "presupuesto", "incluirDron", "notas"],
+  additionalProperties: false,
+};
 
 // Extrae el objeto JSON aunque el modelo agregue texto alrededor.
 export function parsePaquete(text: string): unknown {

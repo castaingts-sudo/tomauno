@@ -48,10 +48,33 @@ export default function Home() {
   const [progreso, setProgreso] = useState(0);
   const [error, setError] = useState("");
   const [demo, setDemo] = useState(false);
+  const [leyendo, setLeyendo] = useState(false);
 
   useEffect(() => setHistorial(loadProyectos()), []);
 
   const set = <K extends keyof Brief>(k: K, v: Brief[K]) => setBrief((b) => ({ ...b, [k]: v }));
+
+  async function subirBrief(file: File | undefined) {
+    if (!file) return;
+    setLeyendo(true);
+    setError("");
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/extract", { method: "POST", body: fd });
+      const j = await res.json().catch(() => ({ error: `Error ${res.status}` }));
+      if (!res.ok) throw new Error(j.error || `Error ${res.status}`);
+      // Solo se sobrescriben los campos que el brief trae con contenido.
+      const llenos = Object.fromEntries(Object.entries(j.campos).filter(([, v]) => v !== "" && v != null));
+      setBrief((b) => ({ ...b, ...llenos, archivo: j.archivo, documento: j.documento, pdf: j.pdf }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLeyendo(false);
+    }
+  }
+
+  const quitarBrief = () => setBrief((b) => ({ ...b, archivo: undefined, documento: undefined, pdf: undefined }));
 
   async function generar(e: React.FormEvent) {
     e.preventDefault();
@@ -81,7 +104,8 @@ export default function Home() {
       const errIdx = text.indexOf("[[ERROR]]");
       if (errIdx !== -1) throw new Error(text.slice(errIdx + 9));
       const paquete = parsePaquete(text) as Paquete;
-      const nuevo: Proyecto = { id: crypto.randomUUID(), creado: new Date().toISOString(), brief, paquete };
+      const { pdf: _pdf, ...briefGuardado } = brief; // el PDF no cabe en el historial del navegador
+      const nuevo: Proyecto = { id: crypto.randomUUID(), creado: new Date().toISOString(), brief: briefGuardado, paquete };
       const list = [nuevo, ...historial];
       setHistorial(list);
       saveProyectos(list);
@@ -107,12 +131,28 @@ export default function Home() {
         <h1>
           Toma <span>uno</span>
         </h1>
-        <p>Escribe tu idea de video. Obtén guion, guion técnico, storyboard, plan de rodaje, equipo y presupuesto.</p>
+        <p>Escribe tu idea de video o sube el brief del cliente. Obtén guion, guion técnico, storyboard, plan de rodaje, equipo y presupuesto.</p>
       </header>
 
       <div className="layout">
         <aside className="no-print">
           <form onSubmit={generar} className="card">
+            {brief.archivo ? (
+              <div className="file-chip">
+                <span>📄 {brief.archivo}</span>
+                <button type="button" className="x" onClick={quitarBrief} aria-label="Quitar brief">×</button>
+              </div>
+            ) : (
+              <label className={`drop${leyendo ? " busy" : ""}`}>
+                <input
+                  type="file"
+                  accept=".docx,.pdf,.txt,.md"
+                  disabled={leyendo}
+                  onChange={(e) => { subirBrief(e.target.files?.[0]); e.target.value = ""; }}
+                />
+                {leyendo ? "Leyendo el brief y llenando el formulario…" : <>📎 <b>Subir brief</b> (Word, PDF, TXT) para llenar todo en automático</>}
+              </label>
+            )}
             <label>
               Idea del video
               <textarea
@@ -153,7 +193,7 @@ export default function Home() {
               Notas (cliente, locación, talento…)
               <textarea rows={3} value={brief.notas} onChange={(e) => set("notas", e.target.value)} />
             </label>
-            <button disabled={cargando}>{cargando ? `Generando… ${Math.round(progreso / 1000)}k caracteres` : "Generar preproducción"}</button>
+            <button disabled={cargando || leyendo}>{cargando ? `Generando… ${Math.round(progreso / 1000)}k caracteres` : "Generar preproducción"}</button>
             {error && <p className="error">{error}</p>}
           </form>
 

@@ -1,6 +1,6 @@
 # Toma uno — preproducción de video con IA
 
-Escribe la idea de tu video y la app genera el paquete completo de preproducción:
+Escribe la idea de tu video (o sube el brief del cliente en Word, PDF, TXT o MD: la IA llena el formulario sola) y la app genera el paquete completo de preproducción:
 
 - Resumen creativo (logline, objetivo, público, tono, referencias)
 - Guion audiovisual a dos columnas (VIDEO / AUDIO)
