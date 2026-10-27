@@ -1,3 +1,4 @@
+import { equipoDe } from "./equipo";
 import type { Brief, Paquete } from "./types";
 
 // Paquete de ejemplo para el modo demo (sin clave de API).
@@ -8,6 +9,16 @@ const fig = (x: number, y: number, s = 1) =>
   `<circle cx="${x}" cy="${y}" r="${6 * s}" fill="none" stroke="#222"/><line x1="${x}" y1="${y + 6 * s}" x2="${x}" y2="${y + 30 * s}" stroke="#222"/><line x1="${x - 10 * s}" y1="${y + 14 * s}" x2="${x + 10 * s}" y2="${y + 14 * s}" stroke="#222"/><line x1="${x}" y1="${y + 30 * s}" x2="${x - 8 * s}" y2="${y + 46 * s}" stroke="#222"/><line x1="${x}" y1="${y + 30 * s}" x2="${x + 8 * s}" y2="${y + 46 * s}" stroke="#222"/>`;
 
 export function samplePaquete(b: Brief): Paquete {
+  const p = basePaquete(b);
+  const camB = equipoDe(b).some((o) => o.id === "cam-b");
+  p.guionTecnico = p.guionTecnico.map((s) => {
+    const operador = s.camara === "Dron" ? "Piloto de dron" : camB && s.id.endsWith("B") ? "Cámara B" : s.camara;
+    return { ...s, operador, camara: operador === "Piloto de dron" ? "Dron" : operador };
+  });
+  return p;
+}
+
+function basePaquete(b: Brief): Paquete {
   return {
     resumen: {
       titulo: "Toma uno (demo)",

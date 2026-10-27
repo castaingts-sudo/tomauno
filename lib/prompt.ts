@@ -1,3 +1,4 @@
+import { equipoDe } from "./equipo";
 import type { Brief, Paquete } from "./types";
 
 export const SYSTEM_PROMPT = `Eres un productor y director audiovisual con experiencia en publicidad, documental, redes sociales y cinematografía aérea con drones (RPAS). Conviertes la idea de un cliente en un paquete de preproducción completo y realista, listo para rodar.
@@ -7,7 +8,7 @@ Responde SOLO con un objeto JSON válido, sin texto antes ni después y sin bloq
 {
   "resumen": { "titulo": string, "logline": string, "objetivo": string, "publico": string, "tono": string, "duracion": string, "formato": string, "referencias": string[] },
   "guionAudiovisual": [ { "numero": number, "encabezado": "INT./EXT. LUGAR - MOMENTO", "video": string, "vozEnOff": string, "audio": string, "textoPantalla": string, "duracion": string } ],
-  "guionTecnico": [ { "id": "1A", "escena": number, "tipoPlano": string, "angulo": string, "movimiento": string, "lente": string, "camara": string, "descripcion": string, "vozEnOff": string, "audio": string, "duracion": string, "notas": string } ],
+  "guionTecnico": [ { "id": "1A", "escena": number, "tipoPlano": string, "angulo": string, "movimiento": string, "lente": string, "camara": string, "operador": string, "descripcion": string, "vozEnOff": string, "audio": string, "duracion": string, "notas": string } ],
   "storyboard": [ { "planoId": string, "descripcion": string, "dialogo": string, "transicion": string } ],
   "planRodaje": [ { "dia": number, "fecha": string, "locacion": string, "llamado": string, "items": [ { "hora": string, "actividad": string, "planos": string[], "locacion": string } ] } ],
   "equipo": [ { "categoria": string, "item": string, "cantidad": number, "notas": string } ],
@@ -23,10 +24,12 @@ Reglas:
 - "vozEnOff" es el texto EXACTO que se dice en esa escena o plano (locución, diálogo o testimonial a cuadro, indicando quién habla, p. ej. "VO: ..." o "Testimonial (Alumna A): ..."), escrito completo y listo para grabar, con extensión acorde a la duración (unas 2.5 palabras por segundo). Cadena vacía si no se habla. "audio" es solo música, efectos y sonido directo. "textoPantalla" son supers, subtítulos o logos (cadena vacía si no hay).
 - En el guion técnico, "vozEnOff" de cada plano es el fragmento de la locución que suena sobre ese plano.
 - El guion técnico desglosa cada escena en planos con nomenclatura estándar (PG, PE, PM, PMC, PP, PPP, PD, cenital, contrapicado...), movimiento (fijo, paneo, travelling, gimbal, dolly, órbita de dron, revelación...) y lente sugerido en mm.
+- "operador" es el rol EXACTO del equipo de rodaje que filma ese plano (uno de los roles de cámara o dron de la lista que se te da). Reparte para que las cámaras trabajen en paralelo: la Cámara A lleva el plano principal y la B coberturas, detalles y contraplanos (o la otra mitad de las tomas si son independientes); todo lo aéreo va al piloto de dron. Usa el mismo nombre en "camara".
 - Un panel de storyboard por cada plano del guion técnico, con el mismo id.
 - El storyboard aquí solo lleva la descripción de cada cuadro; los dibujos se hacen aparte.
 - Si se pide dron: incluye planos aéreos con altura aproximada y maniobra, la aeronave y baterías en el equipo, y en locaciones los permisos y restricciones de espacio aéreo (autorización de la autoridad aeronáutica local, distancia a personas, aeropuertos, zonas restringidas, clima/viento).
-- El plan de rodaje agrupa planos por locación y luz (hora dorada, etc.) para minimizar traslados.
+- El plan de rodaje agrupa planos por locación y luz (hora dorada, etc.) para minimizar traslados, y aprovecha que los operadores filman en paralelo. Cada plano del guion técnico debe aparecer en algún "planos" del plan.
+- El crew incluye a todo el equipo de rodaje que se te da, más los roles extra que el proyecto necesite.
 - El equipo y el presupuesto se ajustan al nivel de presupuesto pedido; los montos son estimados orientativos.
 - El checklist son tareas concretas de preproducción antes del día de rodaje.
 - Si se adjunta un brief del cliente, es la fuente principal: respeta su concepto, mensajes clave, escaleta, textos de voz en off y testimoniales, locaciones, talento, idiomas/subtítulos, días de rodaje y entregables. Desarrolla y completa lo que falte sin contradecirlo.`;
@@ -39,12 +42,13 @@ Formato / plataforma: ${b.formato || "a definir"}
 Estilo visual: ${b.estilo || "a definir"}
 Presupuesto: ${b.presupuesto || "medio"}
 Incluir tomas con dron: ${b.incluirDron ? "sí" : "no"}
-Notas adicionales: ${b.notas || "ninguna"}${
+Notas adicionales: ${b.notas || "ninguna"}
+Equipo de rodaje: ${equipoDe(b).map((o) => o.rol + (o.nombre ? ` (${o.nombre})` : "")).join(", ")}${
     b.documento ? `\n\nBrief del cliente (${b.archivo || "documento"}):\n<brief>\n${b.documento}\n</brief>` : ""
   }${b.pdf ? `\n\nEl brief del cliente (${b.archivo || "PDF"}) va adjunto como documento.` : ""}`;
 }
 
-export const EXTRACT_PROMPT = `Lee el brief audiovisual adjunto y llena los campos del formulario de preproducción en español. "idea" es un resumen claro de 2 a 4 frases del video que se quiere lograr (concepto, cliente, público). "duracion", "formato", "estilo" y "presupuesto" salen del brief; si no se mencionan, deja una cadena vacía (presupuesto: "bajo", "medio" o "alto" si se puede inferir, si no "medio"). "incluirDron" es true si el brief menciona dron o tomas aéreas. "notas" resume datos prácticos: cliente, idiomas y subtítulos, talento, locaciones, días de rodaje y entregables.`;
+export const EXTRACT_PROMPT = `Lee el brief audiovisual adjunto y llena los campos del formulario de preproducción en español. "idea" es un resumen claro de 2 a 4 frases del video que se quiere lograr (concepto, cliente, público). "duracion", "formato", "estilo" y "presupuesto" salen del brief; si no se mencionan, deja una cadena vacía (presupuesto: "bajo", "medio" o "alto" si se puede inferir, si no "medio"). "incluirDron" es true si el brief menciona dron o tomas aéreas. "camaras" es cuántos operadores de cámara (sin contar el dron) pide o implica el brief; 0 si no se puede saber. "notas" resume datos prácticos: cliente, idiomas y subtítulos, talento, locaciones, días de rodaje y entregables.`;
 
 export const BRIEF_FIELDS_SCHEMA = {
   type: "object",
@@ -55,9 +59,10 @@ export const BRIEF_FIELDS_SCHEMA = {
     estilo: { type: "string" },
     presupuesto: { type: "string", enum: ["bajo", "medio", "alto"] },
     incluirDron: { type: "boolean" },
+    camaras: { type: "integer" },
     notas: { type: "string" },
   },
-  required: ["idea", "duracion", "formato", "estilo", "presupuesto", "incluirDron", "notas"],
+  required: ["idea", "duracion", "formato", "estilo", "presupuesto", "incluirDron", "camaras", "notas"],
   additionalProperties: false,
 };
 

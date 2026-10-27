@@ -8,9 +8,18 @@ export interface Brief {
   presupuesto: string; // bajo | medio | alto o una cifra
   incluirDron: boolean;
   notas: string;
+  equipoRodaje?: Operador[]; // quién filma: director, cámaras, piloto de dron
   archivo?: string; // nombre del brief subido
   documento?: string; // texto completo del brief (Word/TXT/MD)
   pdf?: string; // brief en PDF, base64 (no se guarda en el historial)
+}
+
+export interface Operador {
+  id: string; // "director", "cam-a", "cam-b", "dron"… (va en la URL de su hoja)
+  rol: string; // "Director", "Cámara A", "Piloto de dron"
+  tipo: "director" | "camara" | "dron";
+  nombre: string;
+  contacto: string;
 }
 
 export interface Resumen {
@@ -42,6 +51,7 @@ export interface Plano {
   movimiento: string;
   lente: string;
   camara: string; // cámara o dron
+  operador?: string; // rol del equipo que la filma ("Cámara A", "Piloto de dron")
   descripcion: string;
   vozEnOff?: string;
   audio: string;
@@ -116,4 +126,5 @@ export interface Proyecto {
   brief: Brief;
   paquete: Paquete;
   share?: { id: string; ownerToken: string };
+  equipoShare?: { id: string; ownerToken: string };
 }

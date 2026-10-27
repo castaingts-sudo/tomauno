@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ajustarEquipo, equipoDe, tomasDe } from "@/lib/equipo";
 import { completarPaquete, parsePaquete } from "@/lib/prompt";
 import { download, slug, toMarkdown } from "@/lib/export";
-import type { Brief, Paquete, Proyecto } from "@/lib/types";
+import type { Brief, Operador, Paquete, Proyecto } from "@/lib/types";
 
 const STORAGE_KEY = "toma-uno:proyectos";
 
@@ -95,8 +96,14 @@ export default function Home() {
       const j = await res.json().catch(() => ({ error: `Error ${res.status}` }));
       if (!res.ok) throw new Error(j.error || `Error ${res.status}`);
       // Solo se sobrescriben los campos que el brief trae con contenido.
-      const llenos = Object.fromEntries(Object.entries(j.campos).filter(([, v]) => v !== "" && v != null));
-      setBrief((b) => ({ ...b, ...llenos, archivo: j.archivo, documento: j.documento, pdf: j.pdf }));
+      const { camaras, ...campos } = j.campos as Partial<Brief> & { camaras?: number };
+      const llenos = Object.fromEntries(Object.entries(campos).filter(([, v]) => v !== "" && v != null));
+      setBrief((b) => {
+        const nb = { ...b, ...llenos, archivo: j.archivo, documento: j.documento, pdf: j.pdf };
+        const actual = equipoDe(b);
+        const n = camaras || actual.filter((o) => o.tipo === "camara").length;
+        return { ...nb, equipoRodaje: ajustarEquipo(actual, n, nb.incluirDron) };
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -271,9 +278,18 @@ export default function Home() {
               <input value={brief.estilo} onChange={(e) => set("estilo", e.target.value)} placeholder="Cinematográfico, documental, corporativo…" />
             </label>
             <label className="check">
-              <input type="checkbox" checked={brief.incluirDron} onChange={(e) => set("incluirDron", e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={brief.incluirDron}
+                onChange={(e) => {
+                  const dron = e.target.checked;
+                  const actual = equipoDe(brief);
+                  setBrief((b) => ({ ...b, incluirDron: dron, equipoRodaje: ajustarEquipo(actual, actual.filter((o) => o.tipo === "camara").length, dron) }));
+                }}
+              />
               Incluir tomas aéreas con dron
             </label>
+            <EquipoForm equipo={equipoDe(brief)} dron={brief.incluirDron} onChange={(eq) => set("equipoRodaje", eq)} />
             <label>
               Notas (cliente, locación, talento…)
               <textarea rows={3} value={brief.notas} onChange={(e) => set("notas", e.target.value)} />
@@ -394,6 +410,7 @@ function Resultado({ proyecto, tab, setTab, demo, onChange, dibujando }: { proye
           {shareUrl && <a className="btn" href={shareUrl} target="_blank" rel="noreferrer">Ver comentarios</a>}
         </div>
       </div>
+      <LinksEquipo proyecto={proyecto} onChange={onChange} />
       <div className="toolbar no-print">
         <nav className="tabs">
           {TABS.map(([k, label]) => (
@@ -438,10 +455,10 @@ function Resultado({ proyecto, tab, setTab, demo, onChange, dibujando }: { proye
         <h2>Guion técnico</h2>
         <div className="scroll">
           <table>
-            <thead><tr><th>Plano</th><th>Tipo</th><th>Ángulo</th><th>Movimiento</th><th>Lente</th><th>Cámara</th><th>Descripción</th><th>Voz en off</th><th>Audio</th><th>Dur.</th><th>Notas</th></tr></thead>
+            <thead><tr><th>Plano</th><th>Tipo</th><th>Ángulo</th><th>Movimiento</th><th>Lente</th><th>Operador</th><th>Descripción</th><th>Voz en off</th><th>Audio</th><th>Dur.</th><th>Notas</th></tr></thead>
             <tbody>
               {p.guionTecnico.map((s) => (
-                <tr key={s.id}><td className="mono">{s.id}</td><td>{s.tipoPlano}</td><td>{s.angulo}</td><td>{s.movimiento}</td><td>{s.lente}</td><td>{s.camara}</td><td>{s.descripcion}</td><td className="vo">{s.vozEnOff}</td><td>{s.audio}</td><td>{s.duracion}</td><td>{s.notas}</td></tr>
+                <tr key={s.id}><td className="mono">{s.id}</td><td>{s.tipoPlano}</td><td>{s.angulo}</td><td>{s.movimiento}</td><td>{s.lente}</td><td>{s.operador || s.camara}</td><td>{s.descripcion}</td><td className="vo">{s.vozEnOff}</td><td>{s.audio}</td><td>{s.duracion}</td><td>{s.notas}</td></tr>
               ))}
             </tbody>
           </table>
@@ -549,5 +566,113 @@ function Resultado({ proyecto, tab, setTab, demo, onChange, dibujando }: { proye
         </ul>
       </div>
     </>
+  );
+}
+
+// Quién filma: define cuántas cámaras hay y a quién le llega cada hoja de llamado.
+function EquipoForm({ equipo, dron, onChange }: { equipo: Operador[]; dron: boolean; onChange: (eq: Operador[]) => void }) {
+  const camaras = equipo.filter((o) => o.tipo === "camara").length;
+  const editar = (id: string, k: "nombre" | "contacto", v: string) => onChange(equipo.map((o) => (o.id === id ? { ...o, [k]: v } : o)));
+  return (
+    <fieldset className="crew-form">
+      <legend>Equipo de rodaje</legend>
+      <div className="crew-count">
+        Cámaras
+        <button type="button" onClick={() => onChange(ajustarEquipo(equipo, camaras - 1, dron))} disabled={camaras <= 1} aria-label="Quitar cámara">−</button>
+        <b>{camaras}</b>
+        <button type="button" onClick={() => onChange(ajustarEquipo(equipo, camaras + 1, dron))} disabled={camaras >= 6} aria-label="Agregar cámara">+</button>
+        {dron && <span className="muted">+ piloto de dron</span>}
+      </div>
+      {equipo.map((o) => (
+        <div key={o.id} className="crew-row">
+          <span>{o.rol}</span>
+          <input placeholder="Nombre" value={o.nombre} onChange={(e) => editar(o.id, "nombre", e.target.value)} />
+          <input placeholder="Teléfono" inputMode="tel" value={o.contacto} onChange={(e) => editar(o.id, "contacto", e.target.value)} />
+        </div>
+      ))}
+    </fieldset>
+  );
+}
+
+// Un link por persona del equipo; mismo registro, cada quien ve solo lo suyo.
+function LinksEquipo({ proyecto, onChange }: { proyecto: Proyecto; onChange: (p: Proyecto) => void }) {
+  const equipo = equipoDe(proyecto.brief);
+  const [abierto, setAbierto] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [msg, setMsg] = useState("");
+  const base = proyecto.equipoShare && typeof window !== "undefined" ? `${window.location.origin}/e/${proyecto.equipoShare.id}` : "";
+  const editar = (id: string, k: "nombre" | "contacto", v: string) =>
+    onChange({ ...proyecto, brief: { ...proyecto.brief, equipoRodaje: equipo.map((o) => (o.id === id ? { ...o, [k]: v } : o)) } });
+
+  async function guardar() {
+    setGuardando(true);
+    setMsg("");
+    try {
+      const res = await fetch("/api/equipo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paquete: proyecto.paquete, equipo, id: proyecto.equipoShare?.id, ownerToken: proyecto.equipoShare?.ownerToken }),
+      });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error || `Error ${res.status}`);
+      onChange({ ...proyecto, equipoShare: { id: j.id, ownerToken: j.ownerToken } });
+      setAbierto(true);
+      setMsg(proyecto.equipoShare ? "Links actualizados: cada quien verá los cambios con el mismo link." : "Links listos.");
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : String(err));
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  const texto = (o: Operador, url: string) =>
+    `Hola${o.nombre ? ` ${o.nombre.split(" ")[0]}` : ""}, esta es tu hoja de llamado (${o.rol}) para "${proyecto.paquete.resumen.titulo}": ${url}`;
+  const wa = (o: Operador, url: string) => {
+    const tel = o.contacto.replace(/\D/g, "");
+    return `https://wa.me/${tel.length >= 8 ? tel : ""}?text=${encodeURIComponent(texto(o, url))}`;
+  };
+
+  return (
+    <div className="share card crew-links no-print">
+      <div className="crew-links-head">
+        <div>
+          <b>Links del equipo</b>
+          <p>Una hoja de llamado por persona: el director ve todo (sin presupuesto); cada cámara y el piloto solo sus tomas, horario y equipo.</p>
+        </div>
+        <div className="share-actions">
+          <button className="primary" onClick={guardar} disabled={guardando}>
+            {guardando ? "Guardando…" : proyecto.equipoShare ? "Actualizar links" : "👥 Crear links del equipo"}
+          </button>
+          {base && <button onClick={() => setAbierto(!abierto)}>{abierto ? "Ocultar" : "Ver links"}</button>}
+        </div>
+      </div>
+      {msg && <p className="muted">{msg}</p>}
+      {(abierto || !base) && (
+        <ul className="crew-list">
+          {equipo.map((o) => {
+            const url = base ? `${base}/${o.id}` : "";
+            const n = tomasDe(o, proyecto.paquete.guionTecnico, equipo).length;
+            return (
+              <li key={o.id}>
+                <div className="crew-who">
+                  <b>{o.rol}</b> <small>{o.tipo === "director" ? "todo el proyecto" : `${n} ${n === 1 ? "toma" : "tomas"}`}</small>
+                  <div className="crew-row">
+                    <input placeholder="Nombre" value={o.nombre} onChange={(e) => editar(o.id, "nombre", e.target.value)} />
+                    <input placeholder="Teléfono" inputMode="tel" value={o.contacto} onChange={(e) => editar(o.id, "contacto", e.target.value)} />
+                  </div>
+                </div>
+                {url && (
+                  <div className="share-actions">
+                    <a className="btn" href={url} target="_blank" rel="noreferrer">Abrir</a>
+                    <button onClick={() => navigator.clipboard?.writeText(url)}>Copiar</button>
+                    <a className="btn" href={wa(o, url)} target="_blank" rel="noreferrer">WhatsApp</a>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }

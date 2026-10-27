@@ -107,3 +107,17 @@ tr.total td { font-weight: 700; border-top: 2px solid var(--text); }
   .board { grid-template-columns: repeat(2, 1fr); }
   .scroll { overflow: visible; }
 }
+
+/* Equipo de rodaje */
+.crew-form { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin: 0; display: grid; gap: 8px; }
+.crew-form legend { padding: 0 6px; font-size: 14px; }
+.crew-count { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.crew-count button { width: 32px; padding: 4px 0; }
+.crew-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.crew-form .crew-row { grid-template-columns: 92px 1fr 1fr; align-items: center; font-size: 13px; }
+.crew-links { display: block; }
+.crew-links-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: center; }
+.crew-list { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 10px; }
+.crew-list li { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: flex-end; border-top: 1px solid var(--line); padding-top: 10px; }
+.crew-who { flex: 1 1 280px; }
+.crew-who .crew-row { margin-top: 6px; }

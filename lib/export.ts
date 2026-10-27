@@ -16,7 +16,7 @@ export function toMarkdown({ paquete: p }: Proyecto): string {
     `## Guion técnico`,
     table(
       ["Plano", "Esc.", "Tipo", "Ángulo", "Movimiento", "Lente", "Cámara", "Descripción", "Voz en off", "Audio", "Dur.", "Notas"],
-      p.guionTecnico.map((s) => [s.id, s.escena, s.tipoPlano, s.angulo, s.movimiento, s.lente, s.camara, s.descripcion, s.vozEnOff, s.audio, s.duracion, s.notas]),
+      p.guionTecnico.map((s) => [s.id, s.escena, s.tipoPlano, s.angulo, s.movimiento, s.lente, s.operador || s.camara, s.descripcion, s.vozEnOff, s.audio, s.duracion, s.notas]),
     ),
     `## Storyboard`,
     p.storyboard.map((f) => `- **${f.planoId}** ${f.descripcion}${f.dialogo ? ` — _${f.dialogo}_` : ""} (${f.transicion})`).join("\n"),
