@@ -68,6 +68,7 @@ export interface Panel {
   dialogo: string;
   transicion: string;
   svg?: string; // boceto lineal 320x180 (se dibuja aparte, después del texto)
+  imagen?: string; // dibujo a lápiz generado (URL /api/img/…); tiene prioridad sobre el SVG
 }
 
 export interface JornadaItem {

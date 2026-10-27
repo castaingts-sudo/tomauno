@@ -58,3 +58,28 @@ export async function listJson<T>(prefix: string): Promise<T[]> {
     return [];
   }
 }
+
+// Archivos binarios (dibujos del storyboard). Se sirven por /api/img/… porque el store es privado.
+export async function writeBytes(pathname: string, data: Buffer, contentType: string) {
+  checkConfigured();
+  if (useBlob()) {
+    await put(pathname, data, { access: "private", addRandomSuffix: false, allowOverwrite: true, contentType });
+    return;
+  }
+  const file = path.join(LOCAL_DIR, pathname);
+  await mkdir(path.dirname(file), { recursive: true });
+  await writeFile(file, data);
+}
+
+export async function readBytes(pathname: string): Promise<ReadableStream | Buffer | null> {
+  checkConfigured();
+  if (useBlob()) {
+    const res = await get(pathname, { access: "private" });
+    return res && res.statusCode === 200 ? res.stream : null;
+  }
+  try {
+    return await readFile(path.join(LOCAL_DIR, pathname));
+  } catch {
+    return null;
+  }
+}

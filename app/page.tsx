@@ -171,28 +171,32 @@ export default function Home() {
 
   // Los bocetos se piden aparte, en lotes paralelos, para no rebasar el límite de tiempo de Vercel.
   async function dibujarStoryboard(p: Proyecto) {
-    const pendientes = p.paquete.guionTecnico.filter((s) => !p.paquete.storyboard.find((f) => f.planoId === s.id)?.svg);
+    const pendientes = p.paquete.guionTecnico.filter((s) => {
+      const f = p.paquete.storyboard.find((x) => x.planoId === s.id);
+      return !f?.svg && !f?.imagen;
+    });
+    const contexto = { titulo: p.paquete.resumen.titulo, escenas: p.paquete.guionAudiovisual.map((e) => ({ numero: e.numero, encabezado: e.encabezado })) };
     if (!pendientes.length) return;
     const lotes: (typeof pendientes)[] = [];
     for (let i = 0; i < pendientes.length; i += 4) lotes.push(pendientes.slice(i, i + 4));
     let hechos = 0;
     setDibujando({ hechos, total: lotes.length });
-    const svgs: Record<string, string> = {};
+    const dibujos: Record<string, { svg?: string; imagen?: string }> = {};
     await Promise.all(
       lotes.map(async (planos) => {
         try {
           const res = await fetch("/api/storyboard", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ planos, estilo: p.brief.estilo }),
+            body: JSON.stringify({ planos, estilo: p.brief.estilo, contexto }),
           });
           const j = await res.json();
-          for (const panel of j.paneles ?? []) svgs[panel.planoId] = panel.svg;
+          for (const panel of j.paneles ?? []) dibujos[panel.planoId] = { svg: panel.svg, imagen: panel.imagen };
         } catch {}
         hechos++;
         setDibujando({ hechos, total: lotes.length });
         // Muestra cada lote en cuanto llega.
-        const storyboard = p.paquete.storyboard.map((f) => (svgs[f.planoId] ? { ...f, svg: svgs[f.planoId] } : f));
+        const storyboard = p.paquete.storyboard.map((f) => (dibujos[f.planoId] ? { ...f, ...dibujos[f.planoId] } : f));
         const actualizado = { ...p, paquete: { ...p.paquete, storyboard } };
         setProyecto((cur) => (cur?.id === p.id ? actualizado : cur));
         setHistorial((list) => {
@@ -203,6 +207,13 @@ export default function Home() {
       }),
     );
     setDibujando(null);
+  }
+
+  // Borra los dibujos y los vuelve a pedir (p. ej. al activar el generador de imágenes).
+  function redibujar(p: Proyecto) {
+    const limpio = { ...p, paquete: { ...p.paquete, storyboard: p.paquete.storyboard.map(({ svg: _s, imagen: _i, ...f }) => f) } };
+    actualizar(limpio);
+    dibujarStoryboard(limpio);
   }
 
   function actualizar(p: Proyecto) {
@@ -380,7 +391,7 @@ export default function Home() {
               <p className="muted">El guion ya está listo; puedes revisarlo mientras tanto.</p>
             </div>
           )}
-          {proyecto && !cargando && <Resultado proyecto={proyecto} tab={tab} setTab={setTab} demo={demo} onChange={actualizar} dibujando={dibujando} />}
+          {proyecto && !cargando && <Resultado proyecto={proyecto} tab={tab} setTab={setTab} demo={demo} onChange={actualizar} dibujando={dibujando} onRedibujar={redibujar} />}
         </section>
       </div>
     </main>
@@ -410,7 +421,7 @@ function Progreso({ etapa, chars, segundos }: { etapa: number; chars: number; se
   );
 }
 
-function Resultado({ proyecto, tab, setTab, demo, onChange, dibujando }: { proyecto: Proyecto; tab: Tab; setTab: (t: Tab) => void; demo: boolean; onChange: (p: Proyecto) => void; dibujando: { hechos: number; total: number } | null }) {
+function Resultado({ proyecto, tab, setTab, demo, onChange, dibujando, onRedibujar }: { proyecto: Proyecto; tab: Tab; setTab: (t: Tab) => void; demo: boolean; onChange: (p: Proyecto) => void; dibujando: { hechos: number; total: number } | null; onRedibujar: (p: Proyecto) => void }) {
   const p = proyecto.paquete;
   const [compartiendo, setCompartiendo] = useState(false);
   const [shareMsg, setShareMsg] = useState("");
@@ -523,7 +534,10 @@ function Resultado({ proyecto, tab, setTab, demo, onChange, dibujando }: { proye
       </div>
 
       <div className={show("storyboard")}>
-        <h2>Storyboard</h2>
+        <div className="sec-head">
+          <h2>Storyboard</h2>
+          <button className="no-print" disabled={!!dibujando} onClick={() => onRedibujar(proyecto)}>↻ Volver a dibujar</button>
+        </div>
         <div className="board">
           {p.storyboard.map((f) => {
             const plano = p.guionTecnico.find((s) => s.id === f.planoId);
@@ -531,7 +545,7 @@ function Resultado({ proyecto, tab, setTab, demo, onChange, dibujando }: { proye
               <figure key={f.planoId}>
                 <div className="vf">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {f.svg ? <img src={svgSrc(f.svg)} alt={f.descripcion} /> : <div className={`vf-empty${dibujando ? " busy" : ""}`}>{dibujando ? "Dibujando…" : "Sin boceto"}</div>}
+                  {f.imagen || f.svg ? <img src={f.imagen || svgSrc(f.svg!)} alt={f.descripcion} /> : <div className={`vf-empty${dibujando ? " busy" : ""}`}>{dibujando ? "Dibujando…" : "Sin boceto"}</div>}
                   <span className="vf-tag">{f.planoId}</span>
                   {plano && (
                     <span className="vf-meta">

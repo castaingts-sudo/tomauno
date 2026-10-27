@@ -5,6 +5,7 @@ import type { EquipoItem, Escena, Jornada, Locacion, Operador, Paquete, Plano } 
 
 export interface TomaHoja extends Plano {
   svg?: string;
+  imagen?: string;
   cuadro: string; // descripción del cuadro en el storyboard
 }
 
@@ -41,7 +42,7 @@ export function armarHoja(p: Paquete, equipo: Operador[], id: string, fechaRodaj
     escenas: p.guionAudiovisual,
     tomas: p.guionTecnico.map((s) => {
       const f = p.storyboard.find((x) => x.planoId === s.id);
-      return { ...s, svg: f?.svg, cuadro: f?.descripcion ?? "" };
+      return { ...s, svg: f?.svg, imagen: f?.imagen, cuadro: f?.descripcion ?? "" };
     }),
     planRodaje: p.planRodaje,
     locaciones: p.locaciones,

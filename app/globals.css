@@ -300,3 +300,4 @@ input[type="checkbox"] { width: auto; }
 .tabs button.on:hover:not(:disabled) { background: var(--accent); }
 .crew-list li > * { min-width: 0; }
 .crew-links-head .share-main { flex: 1 1 260px; min-width: 0; }
+.sec-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }

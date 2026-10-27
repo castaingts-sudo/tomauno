@@ -196,7 +196,7 @@ export default async function HojaPage({ params }: Params) {
           <article key={t.id} id={`toma-${t.id}`} className="tu-shot">
             <div className="vf">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              {t.svg ? <img src={svgSrc(t.svg)} alt={t.cuadro || t.descripcion} loading="lazy" /> : <div className="vf-empty">Sin dibujo</div>}
+              {t.imagen || t.svg ? <img src={t.imagen || svgSrc(t.svg!)} alt={t.cuadro || t.descripcion} loading="lazy" /> : <div className="vf-empty">Sin dibujo</div>}
               <span className="vf-tag">{t.id}</span>
               <span className="vf-meta"><span>{t.tipoPlano}</span><span>{t.lente}</span></span>
             </div>
