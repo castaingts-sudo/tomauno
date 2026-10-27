@@ -3,9 +3,10 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 // Almacenamiento de links compartidos: Vercel Blob en producción,
-// carpeta .data/ en local cuando no hay BLOB_READ_WRITE_TOKEN.
+// carpeta .data/ en local cuando no hay store configurado.
 
-const useBlob = () => Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+// Token de lectura/escritura o, en Vercel, el store conectado vía OIDC (BLOB_STORE_ID).
+const useBlob = () => Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID);
 const LOCAL_DIR = path.join(process.cwd(), ".data");
 
 export class StoreNotConfigured extends Error {}
