@@ -10,7 +10,7 @@ import type { Brief, Operador, Paquete, Proyecto } from "@/lib/types";
 
 const STORAGE_KEY = "toma-uno:proyectos";
 const BORRADOR_KEY = "toma-uno:borrador";
-const LECTURAS_KEY = "toma-uno:lecturas";
+const LECTURAS_KEY = "toma-uno:lecturas-opus"; // lecturas hechas con Opus
 
 type Lectura = { campos: Partial<Brief> & { camaras?: number }; documento?: string; archivo: string };
 

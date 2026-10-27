@@ -6,8 +6,8 @@ import type { Brief } from "@/lib/types";
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
-// Llenar el formulario es una tarea sencilla: modelo más económico que el de la generación.
-const MODEL = process.env.EXTRACT_MODEL || "claude-sonnet-5-5";
+// Calidad primero: el mismo modelo que la generación. El gasto se controla reutilizando lecturas en el navegador.
+const MODEL = process.env.CLAUDE_MODEL || "claude-opus-5-5";
 const MAX_BYTES = 4 * 1024 * 1024; // límite de cuerpo en Vercel: 4.5 MB
 
 type Campos = Omit<Brief, "archivo" | "documento" | "pdf">;
