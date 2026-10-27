@@ -81,6 +81,7 @@ export default function Home() {
   const [demo, setDemo] = useState(false);
   const [leyendo, setLeyendo] = useState(false);
   const [dibujando, setDibujando] = useState<{ hechos: number; total: number } | null>(null);
+  const [avisoDibujo, setAvisoDibujo] = useState("");
 
   useEffect(() => setHistorial(loadProyectos()), []);
 
@@ -177,6 +178,7 @@ export default function Home() {
     });
     const contexto = { titulo: p.paquete.resumen.titulo, escenas: p.paquete.guionAudiovisual.map((e) => ({ numero: e.numero, encabezado: e.encabezado })) };
     if (!pendientes.length) return;
+    setAvisoDibujo("");
     const lotes: (typeof pendientes)[] = [];
     for (let i = 0; i < pendientes.length; i += 4) lotes.push(pendientes.slice(i, i + 4));
     let hechos = 0;
@@ -192,6 +194,7 @@ export default function Home() {
           });
           const j = await res.json();
           for (const panel of j.paneles ?? []) dibujos[panel.planoId] = { svg: panel.svg, imagen: panel.imagen };
+          if (j.aviso) setAvisoDibujo(`El generador de dibujos falló y se usaron bocetos simples: ${j.aviso}`);
         } catch {}
         hechos++;
         setDibujando({ hechos, total: lotes.length });
@@ -391,6 +394,7 @@ export default function Home() {
               <p className="muted">El guion ya está listo; puedes revisarlo mientras tanto.</p>
             </div>
           )}
+          {avisoDibujo && <p className="error no-print">{avisoDibujo}</p>}
           {proyecto && !cargando && <Resultado proyecto={proyecto} tab={tab} setTab={setTab} demo={demo} onChange={actualizar} dibujando={dibujando} onRedibujar={redibujar} />}
         </section>
       </div>
