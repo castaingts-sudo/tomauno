@@ -1,4 +1,5 @@
 import { gearDe } from "./camaras";
+import { MANUAL_DIRECCION } from "./manual";
 import { equipoDe } from "./equipo";
 import type { Brief, Paquete } from "./types";
 
@@ -35,7 +36,8 @@ Reglas:
 - El crew incluye a todo el equipo de rodaje que se te da, más los roles extra que el proyecto necesite.
 - El equipo y el presupuesto se ajustan al nivel de presupuesto pedido; los montos son estimados orientativos.
 - El checklist son tareas concretas de preproducción antes del día de rodaje.
-- Si se adjunta un brief del cliente, es la fuente principal: respeta su concepto, mensajes clave, escaleta, textos de voz en off y testimoniales, locaciones, talento, idiomas/subtítulos, días de rodaje y entregables. Desarrolla y completa lo que falte sin contradecirlo.`;
+- Si se adjunta un brief del cliente, es la fuente principal: respeta su concepto, mensajes clave, escaleta, textos de voz en off y testimoniales, locaciones, talento, idiomas/subtítulos, días de rodaje y entregables. Desarrolla y completa lo que falte sin contradecirlo.
+${MANUAL_DIRECCION}`;
 
 export function userPrompt(b: Brief): string {
   return `Idea del video: ${b.idea}
