@@ -53,6 +53,13 @@ h3 { margin: 0 0 8px; font-size: 15px; }
 .tabs, .actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .tabs button.on { background: var(--accent); color: #111; border-color: var(--accent); }
 .hide { display: none; }
+.progress-head { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.bar { height: 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.bar > div { height: 100%; background: var(--accent); border-radius: 999px; transition: width 0.6s ease; }
+.steps { list-style: none; padding: 0; margin: 14px 0 6px; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px 12px; font-size: 14px; color: var(--muted); }
+.steps .done { color: var(--text); }
+.steps .now { color: var(--accent); font-weight: 600; }
+.progress p { font-size: 13px; margin: 8px 0 0; }
 .share { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: center; border-color: var(--accent); }
 .share p { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
 .share-url a { color: var(--accent); word-break: break-all; }

@@ -20,6 +20,27 @@ const TABS = [
 ] as const;
 type Tab = (typeof TABS)[number][0];
 
+// Secciones en el orden en que la IA las escribe; sirven para la barra de progreso.
+const ETAPAS = [
+  ["resumen", "Resumen"],
+  ["guionAudiovisual", "Guion y voz en off"],
+  ["guionTecnico", "Guion técnico"],
+  ["storyboard", "Storyboard"],
+  ["planRodaje", "Plan de rodaje"],
+  ["equipo", "Equipo y crew"],
+  ["locaciones", "Locaciones"],
+  ["presupuesto", "Presupuesto"],
+  ["postproduccion", "Post y checklist"],
+] as const;
+
+function etapaActual(text: string): number {
+  let idx = -1;
+  ETAPAS.forEach(([k], i) => {
+    if (text.includes(`"${k}"`)) idx = i;
+  });
+  return idx;
+}
+
 const EMPTY: Brief = { idea: "", duracion: "60 s", formato: "16:9 YouTube", estilo: "", presupuesto: "medio", incluirDron: true, notas: "" };
 
 function loadProyectos(): Proyecto[] {
@@ -45,7 +66,15 @@ export default function Home() {
   const [historial, setHistorial] = useState<Proyecto[]>([]);
   const [tab, setTab] = useState<Tab>("resumen");
   const [cargando, setCargando] = useState(false);
-  const [progreso, setProgreso] = useState(0);
+  const [progreso, setProgreso] = useState({ chars: 0, etapa: -1 });
+  const [inicio, setInicio] = useState(0);
+  const [ahora, setAhora] = useState(0);
+
+  useEffect(() => {
+    if (!cargando) return;
+    const t = setInterval(() => setAhora(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [cargando]);
   const [error, setError] = useState("");
   const [demo, setDemo] = useState(false);
   const [leyendo, setLeyendo] = useState(false);
@@ -80,7 +109,9 @@ export default function Home() {
     e.preventDefault();
     setCargando(true);
     setError("");
-    setProgreso(0);
+    setProgreso({ chars: 0, etapa: -1 });
+    setInicio(Date.now());
+    setAhora(Date.now());
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
@@ -99,7 +130,7 @@ export default function Home() {
         const { done, value } = await reader.read();
         if (done) break;
         text += decoder.decode(value, { stream: true });
-        setProgreso(text.length);
+        setProgreso({ chars: text.length, etapa: etapaActual(text) });
       }
       const errIdx = text.indexOf("[[ERROR]]");
       if (errIdx !== -1) throw new Error(text.slice(errIdx + 9));
@@ -200,7 +231,7 @@ export default function Home() {
               Notas (cliente, locación, talento…)
               <textarea rows={3} value={brief.notas} onChange={(e) => set("notas", e.target.value)} />
             </label>
-            <button disabled={cargando || leyendo}>{cargando ? `Generando… ${Math.round(progreso / 1000)}k caracteres` : "Generar preproducción"}</button>
+            <button disabled={cargando || leyendo}>{cargando ? "Generando…" : "Generar preproducción"}</button>
             {error && <p className="error">{error}</p>}
           </form>
 
@@ -224,11 +255,34 @@ export default function Home() {
 
         <section className="result">
           {!proyecto && !cargando && <div className="empty card no-print">Tu paquete de preproducción aparecerá aquí.</div>}
-          {cargando && !proyecto && <div className="empty card">Escribiendo el guion y dibujando el storyboard…</div>}
-          {proyecto && <Resultado proyecto={proyecto} tab={tab} setTab={setTab} demo={demo} onChange={actualizar} />}
+          {cargando && <Progreso etapa={progreso.etapa} chars={progreso.chars} segundos={Math.max(0, Math.round((ahora - inicio) / 1000))} />}
+          {proyecto && !cargando && <Resultado proyecto={proyecto} tab={tab} setTab={setTab} demo={demo} onChange={actualizar} />}
         </section>
       </div>
     </main>
+  );
+}
+
+function Progreso({ etapa, chars, segundos }: { etapa: number; chars: number; segundos: number }) {
+  // Mientras piensa (sin texto aún) la barra avanza despacio hasta 8 %; luego, por secciones.
+  const pct = etapa < 0 ? Math.min(8, 2 + segundos / 10) : Math.round(8 + ((etapa + 0.5) / ETAPAS.length) * 92);
+  const tiempo = `${Math.floor(segundos / 60)}:${String(segundos % 60).padStart(2, "0")}`;
+  return (
+    <div className="card progress">
+      <div className="progress-head">
+        <b>{etapa < 0 ? "Analizando el brief y planeando el video…" : `Escribiendo: ${ETAPAS[etapa][1]}`}</b>
+        <span className="mono">{tiempo}</span>
+      </div>
+      <div className="bar"><div style={{ width: `${pct}%` }} /></div>
+      <ol className="steps">
+        {ETAPAS.map(([k, label], i) => (
+          <li key={k} className={i < etapa ? "done" : i === etapa ? "now" : ""}>
+            {i < etapa ? "✓" : i === etapa ? "●" : "○"} {label}
+          </li>
+        ))}
+      </ol>
+      <p className="muted">{chars > 0 ? `${Math.round(chars / 1000)}k caracteres escritos · ` : ""}Suele tardar de 1 a 4 minutos. No cierres esta pestaña.</p>
+    </div>
   );
 }
 
