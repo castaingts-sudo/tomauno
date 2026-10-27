@@ -14,6 +14,7 @@ export interface Hoja {
   logline: string;
   duracion: string;
   formato: string;
+  fechaRodaje?: string;
   actualizado: string;
   equipo: Operador[];
   escenas: Escena[];
@@ -27,13 +28,14 @@ export interface HojaGuardada extends Hoja {
   ownerToken: string;
 }
 
-export function armarHoja(p: Paquete, equipo: Operador[], id: string): Hoja {
+export function armarHoja(p: Paquete, equipo: Operador[], id: string, fechaRodaje?: string): Hoja {
   return {
     id,
     titulo: p.resumen.titulo,
     logline: p.resumen.logline,
     duracion: p.resumen.duracion,
     formato: p.resumen.formato,
+    fechaRodaje,
     actualizado: new Date().toISOString(),
     equipo,
     escenas: p.guionAudiovisual,

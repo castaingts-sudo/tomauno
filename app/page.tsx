@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ajustarEquipo, ejemploEquipo, equipoDe, tomasDe } from "@/lib/equipo";
 import { completarPaquete, parsePaquete } from "@/lib/prompt";
+import { ThemeToggle } from "@/components/share-ui";
 import { download, slug, toMarkdown } from "@/lib/export";
 import type { Brief, Operador, Paquete, Proyecto } from "@/lib/types";
 
@@ -97,6 +98,7 @@ export default function Home() {
       if (!res.ok) throw new Error(j.error || `Error ${res.status}`);
       // Solo se sobrescriben los campos que el brief trae con contenido.
       const { camaras, ...campos } = j.campos as Partial<Brief> & { camaras?: number };
+      if (!campos.diasRodaje) delete campos.diasRodaje;
       const llenos = Object.fromEntries(Object.entries(campos).filter(([, v]) => v !== "" && v != null));
       setBrief((b) => {
         const nb = { ...b, ...llenos, archivo: j.archivo, documento: j.documento, pdf: j.pdf };
@@ -220,15 +222,34 @@ export default function Home() {
   return (
     <main>
       <header className="top no-print">
-        <h1>
-          Toma <span>uno</span>
-        </h1>
-        <p>Escribe tu idea de video o sube el brief del cliente. Obtén guion, guion técnico, storyboard, plan de rodaje, equipo y presupuesto.</p>
+        <div className="brand">
+          <div className="brand-mark">T1</div>
+          <div>
+            <h1>
+              Toma <span>uno</span>
+            </h1>
+            <p>Estudio de preproducción</p>
+          </div>
+        </div>
+        <div className="top-right">
+          {proyecto && <span className="chip accent">{proyecto.paquete.resumen.titulo}</span>}
+          <ThemeToggle />
+        </div>
       </header>
+      {!proyecto && !cargando && (
+        <div className="hero-line no-print">
+          <span className="kicker">De la idea al set</span>
+          <h2>
+            Sube el brief. Sal con <em>guion, storyboard y hojas de llamado</em> para todo tu equipo.
+          </h2>
+          <p>Guion audiovisual con voz en off, guion técnico por cámara, plan de rodaje, permisos de dron, presupuesto y links listos para el cliente, el director y cada operador.</p>
+        </div>
+      )}
 
       <div className="layout">
         <aside className="no-print">
           <form onSubmit={generar} className="card">
+            <p className="card-title">Nuevo proyecto</p>
             {brief.archivo ? (
               <div className="file-chip">
                 <span>📄 {brief.archivo}</span>
@@ -269,6 +290,16 @@ export default function Home() {
                 </select>
               </label>
             </div>
+            <div className="row">
+              <label>
+                Fecha de rodaje
+                <input type="date" value={brief.fechaRodaje ?? ""} onChange={(e) => set("fechaRodaje", e.target.value)} />
+              </label>
+              <label>
+                Días
+                <input type="number" min={1} max={30} value={brief.diasRodaje ?? 1} onChange={(e) => set("diasRodaje", Math.max(1, +e.target.value || 1))} />
+              </label>
+            </div>
             <label>
               Formato / plataforma
               <input value={brief.formato} onChange={(e) => set("formato", e.target.value)} placeholder="16:9 YouTube, 9:16 Reels…" />
@@ -300,7 +331,7 @@ export default function Home() {
 
           {historial.length > 0 && (
             <div className="card">
-              <h3>Proyectos guardados</h3>
+              <p className="card-title">Proyectos guardados</p>
               <ul className="hist">
                 {historial.map((p) => (
                   <li key={p.id} className={p.id === proyecto?.id ? "on" : ""}>
@@ -317,7 +348,28 @@ export default function Home() {
         </aside>
 
         <section className="result">
-          {!proyecto && !cargando && <div className="empty card no-print">Tu paquete de preproducción aparecerá aquí.</div>}
+          {!proyecto && !cargando && (
+            <div className="empty card no-print">
+              <h3>Tu paquete aparecerá aquí</h3>
+              <p>Llena el brief a la izquierda o sube el documento del cliente. En 2 a 4 minutos tienes todo esto:</p>
+              <div className="empty-grid">
+                {[
+                  ["01", "Guion audiovisual", "Escenas, voz en off exacta y textos en pantalla"],
+                  ["02", "Guion técnico", "Plano, lente y movimiento por cámara"],
+                  ["03", "Storyboard", "Un dibujo por toma"],
+                  ["04", "Plan de rodaje", "Horarios por luz y locación"],
+                  ["05", "Dron", "Alturas, maniobras y espacio aéreo"],
+                  ["06", "Links", "Cliente, director y cada operador"],
+                ].map(([n, t, d]) => (
+                  <div key={n}>
+                    <span>{n}</span>
+                    <b>{t}</b>
+                    {d}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {cargando && <Progreso etapa={progreso.etapa} chars={progreso.chars} segundos={Math.max(0, Math.round((ahora - inicio) / 1000))} />}
           {dibujando && (
             <div className="card progress no-print">
@@ -371,7 +423,7 @@ function Resultado({ proyecto, tab, setTab, demo, onChange, dibujando }: { proye
       const res = await fetch("/api/share", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paquete: p, id: proyecto.share?.id, ownerToken: proyecto.share?.ownerToken }),
+        body: JSON.stringify({ paquete: p, id: proyecto.share?.id, ownerToken: proyecto.share?.ownerToken, fechaRodaje: proyecto.brief.fechaRodaje }),
       });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error || `Error ${res.status}`);
@@ -391,8 +443,11 @@ function Resultado({ proyecto, tab, setTab, demo, onChange, dibujando }: { proye
   return (
     <>
       {demo && <p className="banner no-print">Modo demo: agrega ANTHROPIC_API_KEY en .env.local para generar con IA.</p>}
-      <div className="share card no-print">
-        <div>
+      <div className="links-grid no-print">
+      <div className="share card">
+        <div className="share-main">
+          <div className="share-icon">🎬</div>
+          <div>
           <b>Link para el cliente</b>
           <p>Solo muestra el guion audiovisual y el storyboard, con opción de comentar y aprobar.</p>
           {shareUrl && (
@@ -401,6 +456,7 @@ function Resultado({ proyecto, tab, setTab, demo, onChange, dibujando }: { proye
             </p>
           )}
           {shareMsg && <p className="muted">{shareMsg}</p>}
+          </div>
         </div>
         <div className="share-actions">
           <button className="primary" onClick={compartir} disabled={compartiendo}>
@@ -411,6 +467,7 @@ function Resultado({ proyecto, tab, setTab, demo, onChange, dibujando }: { proye
         </div>
       </div>
       <LinksEquipo proyecto={proyecto} onChange={onChange} />
+      </div>
       <div className="toolbar no-print">
         <nav className="tabs">
           {TABS.map(([k, label]) => (
@@ -472,8 +529,17 @@ function Resultado({ proyecto, tab, setTab, demo, onChange, dibujando }: { proye
             const plano = p.guionTecnico.find((s) => s.id === f.planoId);
             return (
               <figure key={f.planoId}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                {f.svg ? <img src={svgSrc(f.svg)} alt={f.descripcion} /> : <div className="noimg">{dibujando ? "Dibujando…" : "Sin boceto"}</div>}
+                <div className="vf">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {f.svg ? <img src={svgSrc(f.svg)} alt={f.descripcion} /> : <div className={`vf-empty${dibujando ? " busy" : ""}`}>{dibujando ? "Dibujando…" : "Sin boceto"}</div>}
+                  <span className="vf-tag">{f.planoId}</span>
+                  {plano && (
+                    <span className="vf-meta">
+                      <span>{plano.tipoPlano}</span>
+                      <span>{plano.lente}</span>
+                    </span>
+                  )}
+                </div>
                 <figcaption>
                   <b>{f.planoId}</b> {plano && <span className="tag">{plano.tipoPlano} · {plano.movimiento}</span>}
                   <p>{f.descripcion}</p>
@@ -490,7 +556,11 @@ function Resultado({ proyecto, tab, setTab, demo, onChange, dibujando }: { proye
         <h2>Plan de rodaje</h2>
         {p.planRodaje.map((d) => (
           <div key={d.dia}>
-            <h3>Día {d.dia} · {d.fecha} · {d.locacion} <small>Llamado {d.llamado}</small></h3>
+            <div className="day-head">
+              <span className="chip accent">Día {d.dia}</span>
+              <h3>{d.fecha} · {d.locacion}</h3>
+              <span className="chip">Llamado {d.llamado}</span>
+            </div>
             <table>
               <thead><tr><th>Hora</th><th>Actividad</th><th>Planos</th><th>Locación</th></tr></thead>
               <tbody>
@@ -615,7 +685,7 @@ function LinksEquipo({ proyecto, onChange }: { proyecto: Proyecto; onChange: (p:
       const res = await fetch("/api/equipo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paquete: proyecto.paquete, equipo, id: proyecto.equipoShare?.id, ownerToken: proyecto.equipoShare?.ownerToken }),
+        body: JSON.stringify({ paquete: proyecto.paquete, equipo, id: proyecto.equipoShare?.id, ownerToken: proyecto.equipoShare?.ownerToken, fechaRodaje: proyecto.brief.fechaRodaje }),
       });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error || `Error ${res.status}`);
@@ -637,11 +707,14 @@ function LinksEquipo({ proyecto, onChange }: { proyecto: Proyecto; onChange: (p:
   };
 
   return (
-    <div className="share card crew-links no-print">
+    <div className="share card crew-links">
       <div className="crew-links-head">
-        <div>
-          <b>Links del equipo</b>
-          <p>Una hoja de llamado por persona: el director ve todo (sin presupuesto); cada cámara y el piloto solo sus tomas, horario y equipo.</p>
+        <div className="share-main">
+          <div className="share-icon">🎥</div>
+          <div>
+            <b>Links del equipo</b>
+            <p>Hoja de llamado por persona. El director ve todo (sin presupuesto); cada cámara y el piloto, solo sus tomas, horario y equipo.</p>
+          </div>
         </div>
         <div className="share-actions">
           <button className="primary" onClick={guardar} disabled={guardando}>

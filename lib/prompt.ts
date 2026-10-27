@@ -29,6 +29,7 @@ Reglas:
 - Un panel de storyboard por cada plano del guion técnico, con el mismo id.
 - El storyboard aquí solo lleva la descripción de cada cuadro; los dibujos se hacen aparte.
 - Si se pide dron: incluye planos aéreos con altura aproximada y maniobra, la aeronave y baterías en el equipo, y en locaciones los permisos y restricciones de espacio aéreo (autorización de la autoridad aeronáutica local, distancia a personas, aeropuertos, zonas restringidas, clima/viento).
+- Si hay fecha de rodaje, cada jornada del plan lleva su fecha real (p. ej. "mar 4 nov 2026") y el horario considera la hora de amanecer y atardecer aproximada de esa fecha y lugar. Usa el número de días indicado.
 - El plan de rodaje agrupa planos por locación y luz (hora dorada, etc.) para minimizar traslados, y aprovecha que los operadores filman en paralelo. Cada plano del guion técnico debe aparecer en algún "planos" del plan.
 - El crew incluye a todo el equipo de rodaje que se te da, más los roles extra que el proyecto necesite.
 - El equipo y el presupuesto se ajustan al nivel de presupuesto pedido; los montos son estimados orientativos.
@@ -43,6 +44,7 @@ Formato / plataforma: ${b.formato || "a definir"}
 Estilo visual: ${b.estilo || "a definir"}
 Presupuesto: ${b.presupuesto || "medio"}
 Incluir tomas con dron: ${b.incluirDron ? "sí" : "no"}
+Fecha de rodaje: ${fechaLarga(b.fechaRodaje) ? `${fechaLarga(b.fechaRodaje)}${b.diasRodaje && b.diasRodaje > 1 ? `, ${b.diasRodaje} días seguidos` : ""}` : "a definir"}
 Notas adicionales: ${b.notas || "ninguna"}
 Equipo de rodaje:
 ${equipoDe(b)
@@ -52,7 +54,7 @@ ${equipoDe(b)
   }${b.pdf ? `\n\nEl brief del cliente (${b.archivo || "PDF"}) va adjunto como documento.` : ""}`;
 }
 
-export const EXTRACT_PROMPT = `Lee el brief audiovisual adjunto y llena los campos del formulario de preproducción en español. "idea" es un resumen claro de 2 a 4 frases del video que se quiere lograr (concepto, cliente, público). "duracion", "formato", "estilo" y "presupuesto" salen del brief; si no se mencionan, deja una cadena vacía (presupuesto: "bajo", "medio" o "alto" si se puede inferir, si no "medio"). "incluirDron" es true si el brief menciona dron o tomas aéreas. "camaras" es cuántos operadores de cámara (sin contar el dron) pide o implica el brief; 0 si no se puede saber. "notas" resume datos prácticos: cliente, idiomas y subtítulos, talento, locaciones, días de rodaje y entregables.`;
+export const EXTRACT_PROMPT = `Lee el brief audiovisual adjunto y llena los campos del formulario de preproducción en español. "idea" es un resumen claro de 2 a 4 frases del video que se quiere lograr (concepto, cliente, público). "duracion", "formato", "estilo" y "presupuesto" salen del brief; si no se mencionan, deja una cadena vacía (presupuesto: "bajo", "medio" o "alto" si se puede inferir, si no "medio"). "fechaRodaje" es la fecha del primer día de grabación en formato AAAA-MM-DD si el brief la menciona (cadena vacía si no); "diasRodaje" es cuántos días de grabación (0 si no se sabe). "incluirDron" es true si el brief menciona dron o tomas aéreas. "camaras" es cuántos operadores de cámara (sin contar el dron) pide o implica el brief; 0 si no se puede saber. "notas" resume datos prácticos: cliente, idiomas y subtítulos, talento, locaciones, días de rodaje y entregables.`;
 
 export const BRIEF_FIELDS_SCHEMA = {
   type: "object",
@@ -64,9 +66,11 @@ export const BRIEF_FIELDS_SCHEMA = {
     presupuesto: { type: "string", enum: ["bajo", "medio", "alto"] },
     incluirDron: { type: "boolean" },
     camaras: { type: "integer" },
+    fechaRodaje: { type: "string" },
+    diasRodaje: { type: "integer" },
     notas: { type: "string" },
   },
-  required: ["idea", "duracion", "formato", "estilo", "presupuesto", "incluirDron", "camaras", "notas"],
+  required: ["idea", "duracion", "formato", "estilo", "presupuesto", "incluirDron", "camaras", "fechaRodaje", "diasRodaje", "notas"],
   additionalProperties: false,
 };
 
@@ -164,4 +168,11 @@ export function completarPaquete(p: Partial<Paquete>): Paquete {
     postproduccion: { edicion: "", color: "", audio: "", graficos: "", ...p.postproduccion, entregables: arr(p.postproduccion?.entregables) },
     checklist: arr(p.checklist),
   };
+}
+
+// "2026-11-04" → "miércoles 4 de noviembre de 2026"; "" si no es fecha válida.
+export function fechaLarga(iso?: string): string {
+  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "";
+  const d = new Date(`${iso}T12:00:00`);
+  return isNaN(+d) ? "" : d.toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 }

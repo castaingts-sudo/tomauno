@@ -7,6 +7,8 @@ export interface Brief {
   estilo: string;
   presupuesto: string; // bajo | medio | alto o una cifra
   incluirDron: boolean;
+  fechaRodaje?: string; // AAAA-MM-DD del primer día
+  diasRodaje?: number;
   notas: string;
   equipoRodaje?: Operador[]; // quién filma: director, cámaras, piloto de dron
   archivo?: string; // nombre del brief subido

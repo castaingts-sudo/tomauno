@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 
 // Crea (o actualiza) las hojas de llamado del equipo: un link por operador.
 export async function POST(req: Request) {
-  const { paquete, equipo, id, ownerToken } = (await req.json()) as { paquete: Paquete; equipo: Operador[]; id?: string; ownerToken?: string };
+  const { paquete, equipo, id, ownerToken, fechaRodaje } = (await req.json()) as { paquete: Paquete; equipo: Operador[]; id?: string; ownerToken?: string; fechaRodaje?: string };
   if (!paquete?.guionTecnico || !Array.isArray(equipo) || !equipo.length) return Response.json({ error: "Proyecto inválido." }, { status: 400 });
 
   try {
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
         token = ownerToken;
       }
     }
-    const hoja: HojaGuardada = { ...armarHoja(paquete, equipo, hojaId), ownerToken: token };
+    const hoja: HojaGuardada = { ...armarHoja(paquete, equipo, hojaId, fechaRodaje), ownerToken: token };
     await writeJson(`equipo/${hojaId}.json`, hoja);
     return Response.json({ id: hojaId, ownerToken: token });
   } catch (err) {

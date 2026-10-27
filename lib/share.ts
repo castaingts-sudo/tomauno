@@ -31,6 +31,7 @@ export interface Revision {
   logline: string;
   duracion: string;
   formato: string;
+  fechaRodaje?: string;
   actualizado: string;
   escenas: EscenaCliente[];
 }
@@ -47,13 +48,14 @@ export interface Comentario {
   fecha: string;
 }
 
-export function armarRevision(p: Paquete, id: string): Revision {
+export function armarRevision(p: Paquete, id: string, fechaRodaje?: string): Revision {
   return {
     id,
     titulo: p.resumen.titulo,
     logline: p.resumen.logline,
     duracion: p.resumen.duracion,
     formato: p.resumen.formato,
+    fechaRodaje,
     actualizado: new Date().toISOString(),
     escenas: p.guionAudiovisual.map((e) => ({
       ...e,

@@ -125,6 +125,7 @@ export function Aprobacion({ id, comentarios }: { id: string; comentarios: Comen
 
   return (
     <section className="rv-approve">
+      <span className="kicker">Último paso</span>
       <h2>¿Cómo lo ves?</h2>
       <p>Cuando termines de revisar, apruébalo o dinos qué cambiarías.</p>
       <Lista comentarios={comentarios} />

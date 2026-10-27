@@ -57,7 +57,7 @@ export async function POST(req: Request) {
             pdf
               ? { type: "document", source: { type: "base64", media_type: "application/pdf", data: pdf } }
               : { type: "text", text: `<brief>\n${documento}\n</brief>` },
-            { type: "text", text: EXTRACT_PROMPT },
+            { type: "text", text: `${EXTRACT_PROMPT}\nHoy es ${new Date().toISOString().slice(0, 10)}.` },
           ],
         },
       ],

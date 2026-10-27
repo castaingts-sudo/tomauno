@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 
 // Crea (o actualiza) el link de revisión para el cliente.
 export async function POST(req: Request) {
-  const { paquete, id, ownerToken } = (await req.json()) as { paquete: Paquete; id?: string; ownerToken?: string };
+  const { paquete, id, ownerToken, fechaRodaje } = (await req.json()) as { paquete: Paquete; id?: string; ownerToken?: string; fechaRodaje?: string };
   if (!paquete?.guionAudiovisual) return Response.json({ error: "Proyecto inválido." }, { status: 400 });
 
   try {
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
         token = ownerToken;
       }
     }
-    const rev: RevisionGuardada = { ...armarRevision(paquete, shareId), ownerToken: token };
+    const rev: RevisionGuardada = { ...armarRevision(paquete, shareId, fechaRodaje), ownerToken: token };
     await writeJson(`shares/${shareId}.json`, rev);
     return Response.json({ id: shareId, ownerToken: token, url: `/r/${shareId}` });
   } catch (err) {
