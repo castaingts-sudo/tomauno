@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ajustarEquipo, ejemploEquipo, equipoDe, tomasDe } from "@/lib/equipo";
+import { ajustarEquipo, equipoDe, tomasDe } from "@/lib/equipo";
 import { completarPaquete, parsePaquete } from "@/lib/prompt";
 import { ThemeToggle } from "@/components/share-ui";
-import { NuevoProyecto, SalaControl, Tablero, cuentaTexto, diasPara, fechaCorta, svgSrc } from "@/components/estudio";
+import { NuevoProyecto, SalaControl, SelectorCamara, Tablero, cuentaTexto, diasPara, fechaCorta, svgSrc } from "@/components/estudio";
 import { download, slug, toMarkdown } from "@/lib/export";
 import type { Brief, Operador, Paquete, Proyecto } from "@/lib/types";
 
@@ -557,7 +557,7 @@ function LinksEquipo({ proyecto, onChange }: { proyecto: Proyecto; onChange: (p:
   const [guardando, setGuardando] = useState(false);
   const [msg, setMsg] = useState("");
   const base = proyecto.equipoShare && typeof window !== "undefined" ? `${window.location.origin}/e/${proyecto.equipoShare.id}` : "";
-  const editar = (id: string, k: "nombre" | "contacto" | "equipo", v: string) =>
+  const editar = (id: string, k: "nombre" | "contacto" | "equipo" | "camara", v: string) =>
     onChange({ ...proyecto, brief: { ...proyecto.brief, equipoRodaje: equipo.map((o) => (o.id === id ? { ...o, [k]: v } : o)) } });
 
   async function guardar() {
@@ -619,7 +619,10 @@ function LinksEquipo({ proyecto, onChange }: { proyecto: Proyecto; onChange: (p:
                     <input placeholder="Nombre" value={o.nombre} onChange={(e) => editar(o.id, "nombre", e.target.value)} />
                     <input placeholder="Teléfono" inputMode="tel" value={o.contacto} onChange={(e) => editar(o.id, "contacto", e.target.value)} />
                     {o.tipo !== "director" && (
-                      <input className="crew-gear" placeholder={ejemploEquipo(o)} value={o.equipo ?? ""} onChange={(e) => editar(o.id, "equipo", e.target.value)} />
+                      <div className="crew-gear crew-gear-pair">
+                        <SelectorCamara o={o} onChange={(v) => editar(o.id, "camara", v)} />
+                        <input placeholder={o.tipo === "dron" ? "Extras (opcional)" : "Lentes (opcional)"} value={o.equipo ?? ""} onChange={(e) => editar(o.id, "equipo", e.target.value)} />
+                      </div>
                     )}
                   </div>
                 </div>

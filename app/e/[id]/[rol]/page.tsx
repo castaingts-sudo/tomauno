@@ -1,3 +1,4 @@
+import { gearDe } from "@/lib/camaras";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Countdown, ProgresoTomas, ThemeToggle, TomaCheck } from "@/components/share-ui";
@@ -37,7 +38,7 @@ function Persona({ o, yo }: { o: Operador; yo: boolean }) {
     <div className={`tu-person${yo ? " me" : ""}`}>
       <span className="tu-role">{o.rol}{yo && " · tú"}</span>
       <span className="tu-name">{o.nombre || "Por confirmar"}</span>
-      {o.equipo && <span className="tu-gear">{o.equipo}</span>}
+      {gearDe(o) && <span className="tu-gear">{gearDe(o)}</span>}
       {o.contacto && !yo && (
         <div className="tu-actions">
           {esTel ? (

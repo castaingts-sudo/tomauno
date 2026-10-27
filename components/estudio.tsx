@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ajustarEquipo, ejemploEquipo, equipoDe } from "@/lib/equipo";
+import { CAMARAS, DRONES, fichaCamara, gearDe } from "@/lib/camaras";
+import { ajustarEquipo, equipoDe } from "@/lib/equipo";
 import { leerVivo } from "@/lib/vivo";
 import type { Brief, Operador, Proyecto } from "@/lib/types";
 
@@ -409,7 +410,7 @@ function Opciones({ label, valor, opciones, onChange, libre }: { label: string; 
             {o}
           </button>
         ))}
-        {libre && <input className="st-chip-input" value={opciones.includes(valor) ? "" : valor} onChange={(e) => onChange(e.target.value)} placeholder="Otro…" aria-label={`${label}: otro`} />}
+        {libre && <input className="st-chip-input" style={{ width: `${Math.max(9, (opciones.includes(valor) ? 0 : valor.length) + 3)}ch` }} value={opciones.includes(valor) ? "" : valor} onChange={(e) => onChange(e.target.value)} placeholder="Otro…" aria-label={`${label}: otro`} />}
       </div>
     </div>
   );
@@ -418,7 +419,7 @@ function Opciones({ label, valor, opciones, onChange, libre }: { label: string; 
 // Quién filma: define cuántas cámaras hay y a quién le llega cada hoja de llamado.
 function EquipoForm({ equipo, dron, onChange }: { equipo: Operador[]; dron: boolean; onChange: (eq: Operador[]) => void }) {
   const camaras = equipo.filter((o) => o.tipo === "camara").length;
-  const editar = (id: string, k: "nombre" | "contacto" | "equipo", v: string) => onChange(equipo.map((o) => (o.id === id ? { ...o, [k]: v } : o)));
+  const editar = (id: string, k: "nombre" | "contacto" | "equipo" | "camara", v: string) => onChange(equipo.map((o) => (o.id === id ? { ...o, [k]: v } : o)));
   return (
     <div className="st-crew">
       <div className="st-crew-count">
@@ -437,10 +438,67 @@ function EquipoForm({ equipo, dron, onChange }: { equipo: Operador[]; dron: bool
             </div>
             <input placeholder="Nombre" value={o.nombre} onChange={(e) => editar(o.id, "nombre", e.target.value)} />
             <input placeholder="WhatsApp / teléfono" inputMode="tel" value={o.contacto} onChange={(e) => editar(o.id, "contacto", e.target.value)} />
-            {o.tipo !== "director" && <textarea rows={2} placeholder={ejemploEquipo(o)} value={o.equipo ?? ""} onChange={(e) => editar(o.id, "equipo", e.target.value)} />}
+            {o.tipo !== "director" && (
+              <>
+                <SelectorCamara o={o} onChange={(v) => editar(o.id, "camara", v)} />
+                <FichaCamara o={o} />
+                <input
+                  placeholder={o.tipo === "dron" ? "Extras (opcional): ND, baterías…" : "Lentes que traes (opcional)"}
+                  value={o.equipo ?? ""}
+                  onChange={(e) => editar(o.id, "equipo", e.target.value)}
+                />
+              </>
+            )}
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+const OTRA = "__otra";
+
+// Menú de cámaras (o drones) por marca, con opción de escribir otra.
+export function SelectorCamara({ o, onChange }: { o: Operador; onChange: (v: string) => void }) {
+  const catalogo = o.tipo === "dron" ? DRONES : CAMARAS;
+  const enCatalogo = !!fichaCamara(o.camara, o.tipo);
+  const [otra, setOtra] = useState(!!o.camara && !enCatalogo);
+  const valor = otra ? OTRA : enCatalogo ? o.camara : "";
+  return (
+    <>
+      <select
+        value={valor}
+        className={valor ? "" : "empty"}
+        aria-label={o.tipo === "dron" ? "Dron" : "Cámara"}
+        onChange={(e) => {
+          const v = e.target.value;
+          setOtra(v === OTRA);
+          onChange(v === OTRA ? "" : v);
+        }}
+      >
+        <option value="">{o.tipo === "dron" ? "Elige el dron…" : "Elige la cámara…"}</option>
+        {Object.entries(catalogo).map(([marca, lista]) => (
+          <optgroup key={marca} label={marca}>
+            {lista.map((c) => (
+              <option key={c.modelo} value={c.modelo}>{c.modelo}</option>
+            ))}
+          </optgroup>
+        ))}
+        <option value={OTRA}>Otra (escribir)…</option>
+      </select>
+      {otra && <input autoFocus placeholder={o.tipo === "dron" ? "Modelo del dron" : "Modelo de la cámara"} value={o.camara ?? ""} onChange={(e) => onChange(e.target.value)} />}
+    </>
+  );
+}
+
+function FichaCamara({ o }: { o: Operador }) {
+  const f = fichaCamara(o.camara, o.tipo);
+  if (!f) return null;
+  return (
+    <div className="st-ficha">
+      <span>{f.sensor}</span>
+      <span>{f.montura}</span>
+      <span>{f.max}</span>
     </div>
   );
 }
@@ -465,7 +523,7 @@ function Claqueta({ brief }: { brief: Brief }) {
         <div className="st-slate-row"><span>Duración</span><b>{brief.duracion || "—"}</b></div>
         <div className="st-slate-row"><span>Formato</span><b>{brief.formato || "—"}</b></div>
         <div className="st-slate-row"><span>Estilo</span><b>{brief.estilo || "—"}</b></div>
-        <div className="st-slate-row"><span>Presupuesto</span><b>{brief.presupuesto}</b></div>
+        <div className="st-slate-row"><span>Presupuesto</span><b>{brief.presupuesto.charAt(0).toUpperCase() + brief.presupuesto.slice(1)}</b></div>
         <div className="st-slate-row"><span>Fecha</span><b>{brief.fechaRodaje ? fechaCorta(brief.fechaRodaje) : "—"}</b></div>
         <div className="st-slate-row"><span>Días</span><b>{brief.diasRodaje ?? 1}</b></div>
         <div className="st-slate-row"><span>Cámaras</span><b>{camaras}</b></div>
@@ -484,7 +542,7 @@ function Claqueta({ brief }: { brief: Brief }) {
             <span className={`st-op-av sm ${o.tipo}`}>{o.nombre ? iniciales(o.nombre) : o.tipo === "dron" ? "✈" : o.tipo === "director" ? "D" : o.rol.slice(-1)}</span>
             <span>
               <b>{o.nombre || o.rol}</b>
-              <small>{o.nombre ? o.rol : "sin asignar"}{o.equipo ? ` · ${o.equipo}` : ""}</small>
+              <small>{o.nombre ? o.rol : "sin asignar"}{gearDe(o) ? ` · ${gearDe(o)}` : ""}</small>
             </span>
           </div>
         ))}

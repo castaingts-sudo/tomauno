@@ -18,7 +18,7 @@ export const equipoDe = (b: Brief): Operador[] => b.equipoRodaje ?? equipoBase(1
 export function ajustarEquipo(actual: Operador[], camaras: number, dron: boolean): Operador[] {
   return equipoBase(camaras, dron).map((o) => {
     const prev = actual.find((x) => x.id === o.id);
-    return prev ? { ...o, nombre: prev.nombre, contacto: prev.contacto, equipo: prev.equipo } : o;
+    return prev ? { ...o, nombre: prev.nombre, contacto: prev.contacto, camara: prev.camara, equipo: prev.equipo } : o;
   });
 }
 
