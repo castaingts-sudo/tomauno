@@ -39,3 +39,7 @@ El único costo variable es el uso de la API de Claude por cada generación.
 - `lib/types.ts` — estructura de datos
 - `app/page.tsx` — interfaz
 - `lib/export.ts` — exportación a Markdown
+
+## Instalar en el celular
+
+Abre la URL de Vercel en el teléfono → Compartir → "Agregar a pantalla de inicio" (iPhone) o menú → "Instalar app" (Android).
