@@ -28,7 +28,9 @@ export interface Escena {
   numero: number;
   encabezado: string; // INT./EXT. LUGAR - MOMENTO
   video: string; // lo que se ve
-  audio: string; // voz en off, diálogo, música, SFX
+  vozEnOff?: string; // texto exacto de la locución (o testimonial a cuadro)
+  audio: string; // música, SFX, sonido directo
+  textoPantalla?: string; // supers, subtítulos, logos
   duracion: string;
 }
 
@@ -41,6 +43,7 @@ export interface Plano {
   lente: string;
   camara: string; // cámara o dron
   descripcion: string;
+  vozEnOff?: string;
   audio: string;
   duracion: string;
   notas: string;
@@ -112,4 +115,5 @@ export interface Proyecto {
   creado: string;
   brief: Brief;
   paquete: Paquete;
+  share?: { id: string; ownerToken: string };
 }

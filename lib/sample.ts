@@ -20,15 +20,15 @@ export function samplePaquete(b: Brief): Paquete {
       referencias: ["Comerciales de turismo con apertura aérea", "Documentales de naturaleza con hora dorada"],
     },
     guionAudiovisual: [
-      { numero: 1, encabezado: "EXT. MIRADOR - AMANECER", video: "Revelación aérea: el dron sube detrás de una cresta y descubre el valle con niebla.", audio: "Música ambiental crece. VO: \"Todo empieza con una idea.\"", duracion: "10 s" },
-      { numero: 2, encabezado: "EXT. SENDERO - MAÑANA", video: "La protagonista camina hacia cámara; detalles de sus botas y manos.", audio: "SFX pasos y viento. Música continúa.", duracion: "20 s" },
-      { numero: 3, encabezado: "EXT. CIMA - HORA DORADA", video: "Llega a la cima; órbita del dron alrededor de ella. Cierre con logo.", audio: "VO: \"Y termina con una toma.\" Golpe musical final.", duracion: "30 s" },
+      { numero: 1, encabezado: "EXT. MIRADOR - AMANECER", video: "Revelación aérea: el dron sube detrás de una cresta y descubre el valle con niebla.", vozEnOff: "VO: \"Todo empieza con una idea.\"", audio: "Música ambiental crece.", textoPantalla: "", duracion: "10 s" },
+      { numero: 2, encabezado: "EXT. SENDERO - MAÑANA", video: "La protagonista camina hacia cámara; detalles de sus botas y manos.", vozEnOff: "VO: \"Un lugar, una persona y las ganas de contarlo.\"", audio: "SFX pasos y viento. Música continúa.", textoPantalla: "", duracion: "20 s" },
+      { numero: 3, encabezado: "EXT. CIMA - HORA DORADA", video: "Llega a la cima; órbita del dron alrededor de ella. Cierre con logo.", vozEnOff: "VO: \"Y termina con una toma.\"", audio: "Golpe musical final.", textoPantalla: "Logo + contacto", duracion: "30 s" },
     ],
     guionTecnico: [
-      { id: "1A", escena: 1, tipoPlano: "Gran plano general", angulo: "Aéreo", movimiento: "Ascenso + tilt up (revelación)", lente: "24 mm eq.", camara: "Dron", descripcion: "Subida lenta desde detrás de la cresta a ~60 m AGL.", audio: "Música", duracion: "10 s", notas: "Viento < 25 km/h. Modo cine." },
-      { id: "2A", escena: 2, tipoPlano: "Plano medio", angulo: "Frontal, altura de ojos", movimiento: "Travelling hacia atrás en gimbal", lente: "35 mm", camara: "Cámara A", descripcion: "Protagonista camina hacia cámara.", audio: "Pasos + viento", duracion: "12 s", notas: "Contraluz suave." },
+      { id: "1A", escena: 1, tipoPlano: "Gran plano general", angulo: "Aéreo", movimiento: "Ascenso + tilt up (revelación)", lente: "24 mm eq.", camara: "Dron", descripcion: "Subida lenta desde detrás de la cresta a ~60 m AGL.", vozEnOff: "VO: \"Todo empieza con una idea.\"", audio: "Música", duracion: "10 s", notas: "Viento < 25 km/h. Modo cine." },
+      { id: "2A", escena: 2, tipoPlano: "Plano medio", angulo: "Frontal, altura de ojos", movimiento: "Travelling hacia atrás en gimbal", lente: "35 mm", camara: "Cámara A", descripcion: "Protagonista camina hacia cámara.", vozEnOff: "VO: \"Un lugar, una persona y las ganas de contarlo.\"", audio: "Pasos + viento", duracion: "12 s", notas: "Contraluz suave." },
       { id: "2B", escena: 2, tipoPlano: "Plano detalle", angulo: "Picado", movimiento: "Fijo", lente: "85 mm", camara: "Cámara A", descripcion: "Botas pisando grava.", audio: "SFX pasos", duracion: "8 s", notas: "120 fps para cámara lenta." },
-      { id: "3A", escena: 3, tipoPlano: "Plano general", angulo: "Aéreo", movimiento: "Órbita 180°", lente: "24 mm eq.", camara: "Dron", descripcion: "Órbita alrededor de la protagonista en la cima, ~30 m.", audio: "VO + música", duracion: "20 s", notas: "Distancia de seguridad a personas según norma local." },
+      { id: "3A", escena: 3, tipoPlano: "Plano general", angulo: "Aéreo", movimiento: "Órbita 180°", lente: "24 mm eq.", camara: "Dron", descripcion: "Órbita alrededor de la protagonista en la cima, ~30 m.", vozEnOff: "VO: \"Y termina con una toma.\"", audio: "Música", duracion: "20 s", notas: "Distancia de seguridad a personas según norma local." },
       { id: "3B", escena: 3, tipoPlano: "Plano general", angulo: "Frontal", movimiento: "Fijo", lente: "50 mm", camara: "Cámara A", descripcion: "Silueta contra el sol; entra logo.", audio: "Golpe musical", duracion: "10 s", notas: "Dejar aire para el logo." },
     ],
     storyboard: [

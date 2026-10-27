@@ -53,6 +53,12 @@ h3 { margin: 0 0 8px; font-size: 15px; }
 .tabs, .actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .tabs button.on { background: var(--accent); color: #111; border-color: var(--accent); }
 .hide { display: none; }
+.share { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: center; border-color: var(--accent); }
+.share p { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
+.share-url a { color: var(--accent); word-break: break-all; }
+.share-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+button.primary { background: var(--accent); color: #111; border-color: var(--accent); font-weight: 600; }
+a.btn { display: inline-block; text-decoration: none; color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; }
 .sec h2 { margin: 8px 0 12px; }
 .logline { font-size: 18px; font-style: italic; color: var(--muted); }
 .grid { display: grid; grid-template-columns: 140px 1fr; gap: 8px 16px; }
@@ -63,6 +69,7 @@ h3 { margin: 0 0 8px; font-size: 15px; }
 table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px; }
 th, td { text-align: left; vertical-align: top; padding: 8px; border-bottom: 1px solid var(--line); }
 th { color: var(--muted); font-weight: 500; white-space: nowrap; }
+.vo { font-style: italic; min-width: 220px; }
 .mono { font-family: ui-monospace, Menlo, monospace; font-size: 13px; }
 .num { text-align: right; }
 tr.total td { font-weight: 700; border-top: 2px solid var(--text); }

@@ -6,8 +6,8 @@ Responde SOLO con un objeto JSON válido, sin texto antes ni después y sin bloq
 
 {
   "resumen": { "titulo": string, "logline": string, "objetivo": string, "publico": string, "tono": string, "duracion": string, "formato": string, "referencias": string[] },
-  "guionAudiovisual": [ { "numero": number, "encabezado": "INT./EXT. LUGAR - MOMENTO", "video": string, "audio": string, "duracion": string } ],
-  "guionTecnico": [ { "id": "1A", "escena": number, "tipoPlano": string, "angulo": string, "movimiento": string, "lente": string, "camara": string, "descripcion": string, "audio": string, "duracion": string, "notas": string } ],
+  "guionAudiovisual": [ { "numero": number, "encabezado": "INT./EXT. LUGAR - MOMENTO", "video": string, "vozEnOff": string, "audio": string, "textoPantalla": string, "duracion": string } ],
+  "guionTecnico": [ { "id": "1A", "escena": number, "tipoPlano": string, "angulo": string, "movimiento": string, "lente": string, "camara": string, "descripcion": string, "vozEnOff": string, "audio": string, "duracion": string, "notas": string } ],
   "storyboard": [ { "planoId": string, "descripcion": string, "dialogo": string, "transicion": string, "svg": string } ],
   "planRodaje": [ { "dia": number, "fecha": string, "locacion": string, "llamado": string, "items": [ { "hora": string, "actividad": string, "planos": string[], "locacion": string } ] } ],
   "equipo": [ { "categoria": string, "item": string, "cantidad": number, "notas": string } ],
@@ -19,7 +19,9 @@ Responde SOLO con un objeto JSON válido, sin texto antes ni después y sin bloq
 }
 
 Reglas:
-- El guion audiovisual es a dos columnas (VIDEO / AUDIO). La suma de duraciones debe cuadrar con la duración pedida.
+- El guion audiovisual va por escenas con VIDEO y AUDIO. La suma de duraciones debe cuadrar con la duración pedida.
+- "vozEnOff" es el texto EXACTO que se dice en esa escena o plano (locución, diálogo o testimonial a cuadro, indicando quién habla, p. ej. "VO: ..." o "Testimonial (Alumna A): ..."), escrito completo y listo para grabar, con extensión acorde a la duración (unas 2.5 palabras por segundo). Cadena vacía si no se habla. "audio" es solo música, efectos y sonido directo. "textoPantalla" son supers, subtítulos o logos (cadena vacía si no hay).
+- En el guion técnico, "vozEnOff" de cada plano es el fragmento de la locución que suena sobre ese plano.
 - El guion técnico desglosa cada escena en planos con nomenclatura estándar (PG, PE, PM, PMC, PP, PPP, PD, cenital, contrapicado...), movimiento (fijo, paneo, travelling, gimbal, dolly, órbita de dron, revelación...) y lente sugerido en mm.
 - Un panel de storyboard por cada plano del guion técnico, con el mismo id.
 - "svg" es un boceto de storyboard en blanco y negro: un elemento <svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg"> con trazos simples (stroke="#222", fill="none" o grises claros) que muestre el encuadre: horizonte, siluetas de personas como figuras simples, objetos clave, y flechas para el movimiento de cámara. Sin texto, sin <script>, sin imágenes externas, máximo unas 25 formas.

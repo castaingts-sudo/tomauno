@@ -118,6 +118,13 @@ export default function Home() {
     }
   }
 
+  function actualizar(p: Proyecto) {
+    const list = historial.map((x) => (x.id === p.id ? p : x));
+    setHistorial(list);
+    saveProyectos(list);
+    setProyecto(p);
+  }
+
   function borrar(id: string) {
     const list = historial.filter((p) => p.id !== id);
     setHistorial(list);
@@ -218,21 +225,65 @@ export default function Home() {
         <section className="result">
           {!proyecto && !cargando && <div className="empty card no-print">Tu paquete de preproducción aparecerá aquí.</div>}
           {cargando && !proyecto && <div className="empty card">Escribiendo el guion y dibujando el storyboard…</div>}
-          {proyecto && <Resultado proyecto={proyecto} tab={tab} setTab={setTab} demo={demo} />}
+          {proyecto && <Resultado proyecto={proyecto} tab={tab} setTab={setTab} demo={demo} onChange={actualizar} />}
         </section>
       </div>
     </main>
   );
 }
 
-function Resultado({ proyecto, tab, setTab, demo }: { proyecto: Proyecto; tab: Tab; setTab: (t: Tab) => void; demo: boolean }) {
+function Resultado({ proyecto, tab, setTab, demo, onChange }: { proyecto: Proyecto; tab: Tab; setTab: (t: Tab) => void; demo: boolean; onChange: (p: Proyecto) => void }) {
   const p = proyecto.paquete;
+  const [compartiendo, setCompartiendo] = useState(false);
+  const [shareMsg, setShareMsg] = useState("");
+  const shareUrl = proyecto.share && typeof window !== "undefined" ? `${window.location.origin}/r/${proyecto.share.id}` : "";
+
+  async function compartir() {
+    setCompartiendo(true);
+    setShareMsg("");
+    try {
+      const res = await fetch("/api/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paquete: p, id: proyecto.share?.id, ownerToken: proyecto.share?.ownerToken }),
+      });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error || `Error ${res.status}`);
+      onChange({ ...proyecto, share: { id: j.id, ownerToken: j.ownerToken } });
+      const url = `${window.location.origin}${j.url}`;
+      await navigator.clipboard?.writeText(url).catch(() => {});
+      setShareMsg(proyecto.share ? "Link actualizado y copiado." : "Link creado y copiado.");
+    } catch (err) {
+      setShareMsg(err instanceof Error ? err.message : String(err));
+    } finally {
+      setCompartiendo(false);
+    }
+  }
   const nombre = slug(p.resumen.titulo);
   const show = (t: Tab) => (tab === t ? "sec" : "sec hide");
 
   return (
     <>
       {demo && <p className="banner no-print">Modo demo: agrega ANTHROPIC_API_KEY en .env.local para generar con IA.</p>}
+      <div className="share card no-print">
+        <div>
+          <b>Link para el cliente</b>
+          <p>Solo muestra el guion audiovisual y el storyboard, con opción de comentar y aprobar.</p>
+          {shareUrl && (
+            <p className="share-url">
+              <a href={shareUrl} target="_blank" rel="noreferrer">{shareUrl}</a>
+            </p>
+          )}
+          {shareMsg && <p className="muted">{shareMsg}</p>}
+        </div>
+        <div className="share-actions">
+          <button className="primary" onClick={compartir} disabled={compartiendo}>
+            {compartiendo ? "Guardando…" : proyecto.share ? "Actualizar link" : "🔗 Compartir con cliente"}
+          </button>
+          {shareUrl && <button onClick={() => navigator.clipboard?.writeText(shareUrl)}>Copiar</button>}
+          {shareUrl && <a className="btn" href={shareUrl} target="_blank" rel="noreferrer">Ver comentarios</a>}
+        </div>
+      </div>
       <div className="toolbar no-print">
         <nav className="tabs">
           {TABS.map(([k, label]) => (
@@ -264,10 +315,10 @@ function Resultado({ proyecto, tab, setTab, demo }: { proyecto: Proyecto; tab: T
       <div className={show("audiovisual")}>
         <h2>Guion audiovisual</h2>
         <table>
-          <thead><tr><th>#</th><th>Escena</th><th>Video</th><th>Audio</th><th>Dur.</th></tr></thead>
+          <thead><tr><th>#</th><th>Escena</th><th>Video</th><th>Voz en off</th><th>Música / SFX</th><th>Texto en pantalla</th><th>Dur.</th></tr></thead>
           <tbody>
             {p.guionAudiovisual.map((e) => (
-              <tr key={e.numero}><td>{e.numero}</td><td className="mono">{e.encabezado}</td><td>{e.video}</td><td>{e.audio}</td><td>{e.duracion}</td></tr>
+              <tr key={e.numero}><td>{e.numero}</td><td className="mono">{e.encabezado}</td><td>{e.video}</td><td className="vo">{e.vozEnOff}</td><td>{e.audio}</td><td>{e.textoPantalla}</td><td>{e.duracion}</td></tr>
             ))}
           </tbody>
         </table>
@@ -277,10 +328,10 @@ function Resultado({ proyecto, tab, setTab, demo }: { proyecto: Proyecto; tab: T
         <h2>Guion técnico</h2>
         <div className="scroll">
           <table>
-            <thead><tr><th>Plano</th><th>Tipo</th><th>Ángulo</th><th>Movimiento</th><th>Lente</th><th>Cámara</th><th>Descripción</th><th>Audio</th><th>Dur.</th><th>Notas</th></tr></thead>
+            <thead><tr><th>Plano</th><th>Tipo</th><th>Ángulo</th><th>Movimiento</th><th>Lente</th><th>Cámara</th><th>Descripción</th><th>Voz en off</th><th>Audio</th><th>Dur.</th><th>Notas</th></tr></thead>
             <tbody>
               {p.guionTecnico.map((s) => (
-                <tr key={s.id}><td className="mono">{s.id}</td><td>{s.tipoPlano}</td><td>{s.angulo}</td><td>{s.movimiento}</td><td>{s.lente}</td><td>{s.camara}</td><td>{s.descripcion}</td><td>{s.audio}</td><td>{s.duracion}</td><td>{s.notas}</td></tr>
+                <tr key={s.id}><td className="mono">{s.id}</td><td>{s.tipoPlano}</td><td>{s.angulo}</td><td>{s.movimiento}</td><td>{s.lente}</td><td>{s.camara}</td><td>{s.descripcion}</td><td className="vo">{s.vozEnOff}</td><td>{s.audio}</td><td>{s.duracion}</td><td>{s.notas}</td></tr>
               ))}
             </tbody>
           </table>
@@ -299,7 +350,7 @@ function Resultado({ proyecto, tab, setTab, demo }: { proyecto: Proyecto; tab: T
                 <figcaption>
                   <b>{f.planoId}</b> {plano && <span className="tag">{plano.tipoPlano} · {plano.movimiento}</span>}
                   <p>{f.descripcion}</p>
-                  {f.dialogo && <p className="dlg">{f.dialogo}</p>}
+                  {(f.dialogo || plano?.vozEnOff) && <p className="dlg">{f.dialogo || plano?.vozEnOff}</p>}
                   <small>{f.transicion}</small>
                 </figcaption>
               </figure>
