@@ -33,6 +33,7 @@ body:has(.review) { background: #f6f5f2; color-scheme: light; }
 .rv-board { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-bottom: 18px; }
 .rv-board figure { margin: 0; }
 .rv-board img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.rv-noimg { aspect-ratio: 16 / 9; border: 1px dashed var(--line); border-radius: 8px; background: #fff; }
 .rv-board figcaption { font-size: 14px; color: var(--soft); margin-top: 6px; line-height: 1.4; }
 .rv-shot { display: block; font-size: 12px; font-weight: 700; color: var(--ink); text-transform: uppercase; letter-spacing: 0.04em; }
 

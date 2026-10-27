@@ -8,7 +8,7 @@ Responde SOLO con un objeto JSON válido, sin texto antes ni después y sin bloq
   "resumen": { "titulo": string, "logline": string, "objetivo": string, "publico": string, "tono": string, "duracion": string, "formato": string, "referencias": string[] },
   "guionAudiovisual": [ { "numero": number, "encabezado": "INT./EXT. LUGAR - MOMENTO", "video": string, "vozEnOff": string, "audio": string, "textoPantalla": string, "duracion": string } ],
   "guionTecnico": [ { "id": "1A", "escena": number, "tipoPlano": string, "angulo": string, "movimiento": string, "lente": string, "camara": string, "descripcion": string, "vozEnOff": string, "audio": string, "duracion": string, "notas": string } ],
-  "storyboard": [ { "planoId": string, "descripcion": string, "dialogo": string, "transicion": string, "svg": string } ],
+  "storyboard": [ { "planoId": string, "descripcion": string, "dialogo": string, "transicion": string } ],
   "planRodaje": [ { "dia": number, "fecha": string, "locacion": string, "llamado": string, "items": [ { "hora": string, "actividad": string, "planos": string[], "locacion": string } ] } ],
   "equipo": [ { "categoria": string, "item": string, "cantidad": number, "notas": string } ],
   "crew": [ { "rol": string, "responsabilidades": string } ],
@@ -24,7 +24,7 @@ Reglas:
 - En el guion técnico, "vozEnOff" de cada plano es el fragmento de la locución que suena sobre ese plano.
 - El guion técnico desglosa cada escena en planos con nomenclatura estándar (PG, PE, PM, PMC, PP, PPP, PD, cenital, contrapicado...), movimiento (fijo, paneo, travelling, gimbal, dolly, órbita de dron, revelación...) y lente sugerido en mm.
 - Un panel de storyboard por cada plano del guion técnico, con el mismo id.
-- "svg" es un boceto de storyboard en blanco y negro: un elemento <svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg"> con trazos simples (stroke="#222", fill="none" o grises claros) que muestre el encuadre: horizonte, siluetas de personas como figuras simples, objetos clave, y flechas para el movimiento de cámara. Sin texto, sin <script>, sin imágenes externas, máximo unas 25 formas.
+- El storyboard aquí solo lleva la descripción de cada cuadro; los dibujos se hacen aparte.
 - Si se pide dron: incluye planos aéreos con altura aproximada y maniobra, la aeronave y baterías en el equipo, y en locaciones los permisos y restricciones de espacio aéreo (autorización de la autoridad aeronáutica local, distancia a personas, aeropuertos, zonas restringidas, clima/viento).
 - El plan de rodaje agrupa planos por locación y luz (hora dorada, etc.) para minimizar traslados.
 - El equipo y el presupuesto se ajustan al nivel de presupuesto pedido; los montos son estimados orientativos.
@@ -58,6 +58,27 @@ export const BRIEF_FIELDS_SCHEMA = {
     notas: { type: "string" },
   },
   required: ["idea", "duracion", "formato", "estilo", "presupuesto", "incluirDron", "notas"],
+  additionalProperties: false,
+};
+
+export const STORYBOARD_PROMPT = `Eres dibujante de storyboards. Para cada plano de la lista dibuja un boceto de storyboard como SVG.
+Cada "svg" es un elemento <svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg"> en blanco y negro con trazos de lápiz (stroke="#222", fill="none" o grises claros) que muestre el encuadre real del plano según su tipo, ángulo y lente: horizonte o líneas de fuga, personas como siluetas simples con proporción y pose, objetos y arquitectura clave, y flechas para el movimiento de cámara. Sin texto, sin <script>, sin imágenes externas, máximo unas 30 formas.
+Devuelve un panel por plano, con el mismo planoId.`;
+
+export const STORYBOARD_SCHEMA = {
+  type: "object",
+  properties: {
+    paneles: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: { planoId: { type: "string" }, svg: { type: "string" } },
+        required: ["planoId", "svg"],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["paneles"],
   additionalProperties: false,
 };
 

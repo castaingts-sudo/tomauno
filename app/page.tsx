@@ -78,6 +78,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const [demo, setDemo] = useState(false);
   const [leyendo, setLeyendo] = useState(false);
+  const [dibujando, setDibujando] = useState<{ hechos: number; total: number } | null>(null);
 
   useEffect(() => setHistorial(loadProyectos()), []);
 
@@ -142,11 +143,48 @@ export default function Home() {
       saveProyectos(list);
       setProyecto(nuevo);
       setTab("resumen");
+      dibujarStoryboard(nuevo);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setCargando(false);
     }
+  }
+
+  // Los bocetos se piden aparte, en lotes paralelos, para no rebasar el límite de tiempo de Vercel.
+  async function dibujarStoryboard(p: Proyecto) {
+    const pendientes = p.paquete.guionTecnico.filter((s) => !p.paquete.storyboard.find((f) => f.planoId === s.id)?.svg);
+    if (!pendientes.length) return;
+    const lotes: (typeof pendientes)[] = [];
+    for (let i = 0; i < pendientes.length; i += 4) lotes.push(pendientes.slice(i, i + 4));
+    let hechos = 0;
+    setDibujando({ hechos, total: lotes.length });
+    const svgs: Record<string, string> = {};
+    await Promise.all(
+      lotes.map(async (planos) => {
+        try {
+          const res = await fetch("/api/storyboard", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ planos, estilo: p.brief.estilo }),
+          });
+          const j = await res.json();
+          for (const panel of j.paneles ?? []) svgs[panel.planoId] = panel.svg;
+        } catch {}
+        hechos++;
+        setDibujando({ hechos, total: lotes.length });
+        // Muestra cada lote en cuanto llega.
+        const storyboard = p.paquete.storyboard.map((f) => (svgs[f.planoId] ? { ...f, svg: svgs[f.planoId] } : f));
+        const actualizado = { ...p, paquete: { ...p.paquete, storyboard } };
+        setProyecto((cur) => (cur?.id === p.id ? actualizado : cur));
+        setHistorial((list) => {
+          const nueva = list.map((x) => (x.id === p.id ? actualizado : x));
+          saveProyectos(nueva);
+          return nueva;
+        });
+      }),
+    );
+    setDibujando(null);
   }
 
   function actualizar(p: Proyecto) {
@@ -256,7 +294,16 @@ export default function Home() {
         <section className="result">
           {!proyecto && !cargando && <div className="empty card no-print">Tu paquete de preproducción aparecerá aquí.</div>}
           {cargando && <Progreso etapa={progreso.etapa} chars={progreso.chars} segundos={Math.max(0, Math.round((ahora - inicio) / 1000))} />}
-          {proyecto && !cargando && <Resultado proyecto={proyecto} tab={tab} setTab={setTab} demo={demo} onChange={actualizar} />}
+          {dibujando && (
+            <div className="card progress no-print">
+              <div className="progress-head">
+                <b>Dibujando el storyboard… {dibujando.hechos} de {dibujando.total} grupos</b>
+              </div>
+              <div className="bar"><div style={{ width: `${Math.round(((dibujando.hechos + 0.3) / dibujando.total) * 100)}%` }} /></div>
+              <p className="muted">El guion ya está listo; puedes revisarlo mientras tanto.</p>
+            </div>
+          )}
+          {proyecto && !cargando && <Resultado proyecto={proyecto} tab={tab} setTab={setTab} demo={demo} onChange={actualizar} dibujando={dibujando} />}
         </section>
       </div>
     </main>
@@ -286,7 +333,7 @@ function Progreso({ etapa, chars, segundos }: { etapa: number; chars: number; se
   );
 }
 
-function Resultado({ proyecto, tab, setTab, demo, onChange }: { proyecto: Proyecto; tab: Tab; setTab: (t: Tab) => void; demo: boolean; onChange: (p: Proyecto) => void }) {
+function Resultado({ proyecto, tab, setTab, demo, onChange, dibujando }: { proyecto: Proyecto; tab: Tab; setTab: (t: Tab) => void; demo: boolean; onChange: (p: Proyecto) => void; dibujando: { hechos: number; total: number } | null }) {
   const p = proyecto.paquete;
   const [compartiendo, setCompartiendo] = useState(false);
   const [shareMsg, setShareMsg] = useState("");
@@ -400,7 +447,7 @@ function Resultado({ proyecto, tab, setTab, demo, onChange }: { proyecto: Proyec
             return (
               <figure key={f.planoId}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={svgSrc(f.svg)} alt={f.descripcion} />
+                {f.svg ? <img src={svgSrc(f.svg)} alt={f.descripcion} /> : <div className="noimg">{dibujando ? "Dibujando…" : "Sin boceto"}</div>}
                 <figcaption>
                   <b>{f.planoId}</b> {plano && <span className="tag">{plano.tipoPlano} · {plano.movimiento}</span>}
                   <p>{f.descripcion}</p>

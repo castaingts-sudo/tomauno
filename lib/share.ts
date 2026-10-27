@@ -4,7 +4,7 @@ import type { Paquete } from "./types";
 
 export interface PanelCliente {
   planoId: string;
-  svg: string;
+  svg?: string;
   descripcion: string;
   dialogo: string;
   transicion: string;

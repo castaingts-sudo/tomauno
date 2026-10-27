@@ -54,7 +54,7 @@ export interface Panel {
   descripcion: string;
   dialogo: string;
   transicion: string;
-  svg: string; // boceto lineal 320x180
+  svg?: string; // boceto lineal 320x180 (se dibuja aparte, después del texto)
 }
 
 export interface JornadaItem {

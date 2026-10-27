@@ -75,7 +75,7 @@ export default async function RevisionPage({ params }: { params: Promise<{ id: s
                 {e.paneles.map((f) => (
                   <figure key={f.planoId}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={f.imagen || svgSrc(f.svg)} alt={f.descripcion} loading="lazy" />
+                    {f.imagen || f.svg ? <img src={f.imagen || svgSrc(f.svg!)} alt={f.descripcion} loading="lazy" /> : <div className="rv-noimg" />}
                     <figcaption>
                       <span className="rv-shot">
                         Toma {f.planoId}
