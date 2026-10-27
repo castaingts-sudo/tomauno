@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ajustarEquipo, ejemploEquipo, equipoDe, tomasDe } from "@/lib/equipo";
 import { completarPaquete, parsePaquete } from "@/lib/prompt";
 import { ThemeToggle } from "@/components/share-ui";
+import { NuevoProyecto, SalaControl, Tablero, cuentaTexto, diasPara, fechaCorta, svgSrc } from "@/components/estudio";
 import { download, slug, toMarkdown } from "@/lib/export";
 import type { Brief, Operador, Paquete, Proyecto } from "@/lib/types";
 
@@ -22,27 +23,6 @@ const TABS = [
 ] as const;
 type Tab = (typeof TABS)[number][0];
 
-// Secciones en el orden en que la IA las escribe; sirven para la barra de progreso.
-const ETAPAS = [
-  ["resumen", "Resumen"],
-  ["guionAudiovisual", "Guion y voz en off"],
-  ["guionTecnico", "Guion técnico"],
-  ["storyboard", "Storyboard"],
-  ["planRodaje", "Plan de rodaje"],
-  ["equipo", "Equipo y crew"],
-  ["locaciones", "Locaciones"],
-  ["presupuesto", "Presupuesto"],
-  ["postproduccion", "Post y checklist"],
-] as const;
-
-function etapaActual(text: string): number {
-  let idx = -1;
-  ETAPAS.forEach(([k], i) => {
-    if (text.includes(`"${k}"`)) idx = i;
-  });
-  return idx;
-}
-
 const EMPTY: Brief = { idea: "", duracion: "60 s", formato: "16:9 YouTube", estilo: "", presupuesto: "medio", incluirDron: true, notas: "" };
 
 function loadProyectos(): Proyecto[] {
@@ -59,16 +39,15 @@ function saveProyectos(list: Proyecto[]) {
   } catch {}
 }
 
-// El SVG se muestra como <img>, así que ningún script dentro de él se ejecuta.
-const svgSrc = (svg: string) => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-
 export default function Home() {
   const [brief, setBrief] = useState<Brief>(EMPTY);
   const [proyecto, setProyecto] = useState<Proyecto | null>(null);
   const [historial, setHistorial] = useState<Proyecto[]>([]);
+  const [listo, setListo] = useState(false);
+  const [creando, setCreando] = useState(false);
   const [tab, setTab] = useState<Tab>("resumen");
   const [cargando, setCargando] = useState(false);
-  const [progreso, setProgreso] = useState({ chars: 0, etapa: -1 });
+  const [texto, setTexto] = useState("");
   const [inicio, setInicio] = useState(0);
   const [ahora, setAhora] = useState(0);
 
@@ -83,9 +62,16 @@ export default function Home() {
   const [dibujando, setDibujando] = useState<{ hechos: number; total: number } | null>(null);
   const [avisoDibujo, setAvisoDibujo] = useState("");
 
-  useEffect(() => setHistorial(loadProyectos()), []);
+  useEffect(() => {
+    setHistorial(loadProyectos());
+    setListo(true);
+  }, []);
 
-  const set = <K extends keyof Brief>(k: K, v: Brief[K]) => setBrief((b) => ({ ...b, [k]: v }));
+  // Cada vista arriba de la página, como cambiar de pantalla.
+  const vista = cargando ? "generando" : proyecto ? "proyecto" : creando ? "nuevo" : "tablero";
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [vista]);
 
   async function subirBrief(file: File | undefined) {
     if (!file) return;
@@ -116,11 +102,10 @@ export default function Home() {
 
   const quitarBrief = () => setBrief((b) => ({ ...b, archivo: undefined, documento: undefined, pdf: undefined }));
 
-  async function generar(e: React.FormEvent) {
-    e.preventDefault();
+  async function generar() {
     setCargando(true);
     setError("");
-    setProgreso({ chars: 0, etapa: -1 });
+    setTexto("");
     setInicio(Date.now());
     setAhora(Date.now());
     try {
@@ -141,7 +126,7 @@ export default function Home() {
         const { done, value } = await reader.read();
         if (done) break;
         text += decoder.decode(value, { stream: true });
-        setProgreso({ chars: text.length, etapa: etapaActual(text) });
+        setTexto(text);
       }
       const errIdx = text.indexOf("[[ERROR]]");
       if (errIdx !== -1) throw new Error(text.slice(errIdx + 9));
@@ -161,7 +146,9 @@ export default function Home() {
       setHistorial(list);
       saveProyectos(list);
       setProyecto(nuevo);
-      setTab("resumen");
+      setCreando(false);
+      setBrief(EMPTY);
+      setTab("storyboard");
       dibujarStoryboard(nuevo);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -233,10 +220,16 @@ export default function Home() {
     if (proyecto?.id === id) setProyecto(null);
   }
 
+  function nuevo() {
+    setProyecto(null);
+    setError("");
+    setCreando(true);
+  }
+
   return (
     <main>
       <header className="top no-print">
-        <div className="brand">
+        <button type="button" className="brand" onClick={() => { setProyecto(null); setCreando(false); }} disabled={cargando} aria-label="Ir a mis proyectos">
           <div className="brand-mark">T1</div>
           <div>
             <h1>
@@ -244,184 +237,85 @@ export default function Home() {
             </h1>
             <p>Estudio de preproducción</p>
           </div>
-        </div>
+        </button>
         <div className="top-right">
-          {proyecto && <span className="chip accent">{proyecto.paquete.resumen.titulo}</span>}
+          {vista === "proyecto" && (
+            <button type="button" className="primary top-new" onClick={nuevo}>＋ Nuevo</button>
+          )}
           <ThemeToggle />
         </div>
       </header>
-      {!proyecto && !cargando && (
-        <div className="hero-line no-print">
-          <span className="kicker">De la idea al set</span>
-          <h2>
-            Sube el brief. Sal con <em>guion, storyboard y hojas de llamado</em> para todo tu equipo.
-          </h2>
-          <p>Guion audiovisual con voz en off, guion técnico por cámara, plan de rodaje, permisos de dron, presupuesto y links listos para el cliente, el director y cada operador.</p>
-        </div>
+
+      {vista === "tablero" && listo && <Tablero proyectos={historial} onAbrir={(p) => { setProyecto(p); setTab("resumen"); }} onNuevo={nuevo} onBorrar={borrar} />}
+
+      {vista === "nuevo" && (
+        <NuevoProyecto
+          brief={brief}
+          setBrief={setBrief}
+          leyendo={leyendo}
+          error={error}
+          onSubir={subirBrief}
+          onQuitarBrief={quitarBrief}
+          onGenerar={generar}
+          onCancelar={() => setCreando(false)}
+        />
       )}
 
-      <div className="layout">
-        <aside className="no-print">
-          <form onSubmit={generar} className="card">
-            <p className="card-title">Nuevo proyecto</p>
-            {brief.archivo ? (
-              <div className="file-chip">
-                <span>📄 {brief.archivo}</span>
-                <button type="button" className="x" onClick={quitarBrief} aria-label="Quitar brief">×</button>
-              </div>
-            ) : (
-              <label className={`drop${leyendo ? " busy" : ""}`}>
-                <input
-                  type="file"
-                  accept=".docx,.pdf,.txt,.md"
-                  disabled={leyendo}
-                  onChange={(e) => { subirBrief(e.target.files?.[0]); e.target.value = ""; }}
-                />
-                {leyendo ? "Leyendo el brief y llenando el formulario…" : <>📎 <b>Subir brief</b> (Word, PDF, TXT) para llenar todo en automático</>}
-              </label>
-            )}
-            <label>
-              Idea del video
-              <textarea
-                required
-                rows={6}
-                value={brief.idea}
-                onChange={(e) => set("idea", e.target.value)}
-                placeholder="Ej.: Video promocional de 60 s para un viñedo en Valle de Guadalupe, mostrando la vendimia al amanecer y una cata al atardecer…"
-              />
-            </label>
-            <div className="row">
-              <label>
-                Duración
-                <input value={brief.duracion} onChange={(e) => set("duracion", e.target.value)} />
-              </label>
-              <label>
-                Presupuesto
-                <select value={brief.presupuesto} onChange={(e) => set("presupuesto", e.target.value)}>
-                  <option value="bajo">Bajo</option>
-                  <option value="medio">Medio</option>
-                  <option value="alto">Alto</option>
-                </select>
-              </label>
-            </div>
-            <div className="row">
-              <label>
-                Fecha de rodaje
-                <input type="date" value={brief.fechaRodaje ?? ""} onChange={(e) => set("fechaRodaje", e.target.value)} />
-              </label>
-              <label>
-                Días
-                <input type="number" min={1} max={30} value={brief.diasRodaje ?? 1} onChange={(e) => set("diasRodaje", Math.max(1, +e.target.value || 1))} />
-              </label>
-            </div>
-            <label>
-              Formato / plataforma
-              <input value={brief.formato} onChange={(e) => set("formato", e.target.value)} placeholder="16:9 YouTube, 9:16 Reels…" />
-            </label>
-            <label>
-              Estilo visual
-              <input value={brief.estilo} onChange={(e) => set("estilo", e.target.value)} placeholder="Cinematográfico, documental, corporativo…" />
-            </label>
-            <label className="check">
-              <input
-                type="checkbox"
-                checked={brief.incluirDron}
-                onChange={(e) => {
-                  const dron = e.target.checked;
-                  const actual = equipoDe(brief);
-                  setBrief((b) => ({ ...b, incluirDron: dron, equipoRodaje: ajustarEquipo(actual, actual.filter((o) => o.tipo === "camara").length, dron) }));
-                }}
-              />
-              Incluir tomas aéreas con dron
-            </label>
-            <EquipoForm equipo={equipoDe(brief)} dron={brief.incluirDron} onChange={(eq) => set("equipoRodaje", eq)} />
-            <label>
-              Notas (cliente, locación, talento…)
-              <textarea rows={3} value={brief.notas} onChange={(e) => set("notas", e.target.value)} />
-            </label>
-            <button disabled={cargando || leyendo}>{cargando ? "Generando…" : "Generar preproducción"}</button>
-            {error && <p className="error">{error}</p>}
-          </form>
+      {vista === "generando" && <SalaControl texto={texto} segundos={Math.max(0, Math.round((ahora - inicio) / 1000))} brief={brief} />}
 
-          {historial.length > 0 && (
-            <div className="card">
-              <p className="card-title">Proyectos guardados</p>
-              <ul className="hist">
-                {historial.map((p) => (
-                  <li key={p.id} className={p.id === proyecto?.id ? "on" : ""}>
-                    <button type="button" className="link" onClick={() => { setProyecto(p); setBrief(p.brief); }}>
-                      {p.paquete.resumen.titulo}
-                      <small>{new Date(p.creado).toLocaleString()}</small>
-                    </button>
-                    <button type="button" className="x" onClick={() => borrar(p.id)} aria-label="Borrar">×</button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </aside>
-
+      {vista === "proyecto" && proyecto && (
         <section className="result">
-          {!proyecto && !cargando && (
-            <div className="empty card no-print">
-              <h3>Tu paquete aparecerá aquí</h3>
-              <p>Llena el brief a la izquierda o sube el documento del cliente. En 2 a 4 minutos tienes todo esto:</p>
-              <div className="empty-grid">
-                {[
-                  ["01", "Guion audiovisual", "Escenas, voz en off exacta y textos en pantalla"],
-                  ["02", "Guion técnico", "Plano, lente y movimiento por cámara"],
-                  ["03", "Storyboard", "Un dibujo por toma"],
-                  ["04", "Plan de rodaje", "Horarios por luz y locación"],
-                  ["05", "Dron", "Alturas, maniobras y espacio aéreo"],
-                  ["06", "Links", "Cliente, director y cada operador"],
-                ].map(([n, t, d]) => (
-                  <div key={n}>
-                    <span>{n}</span>
-                    <b>{t}</b>
-                    {d}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {cargando && <Progreso etapa={progreso.etapa} chars={progreso.chars} segundos={Math.max(0, Math.round((ahora - inicio) / 1000))} />}
+          <ProyectoHead proyecto={proyecto} onVolver={() => setProyecto(null)} />
           {dibujando && (
-            <div className="card progress no-print">
+            <div className="card progress st-drawing no-print">
               <div className="progress-head">
-                <b>Dibujando el storyboard… {dibujando.hechos} de {dibujando.total} grupos</b>
+                <b>Dibujando el storyboard · {dibujando.hechos} de {dibujando.total} grupos</b>
+                <span className="mono">{Math.round(((dibujando.hechos + 0.3) / dibujando.total) * 100)}%</span>
               </div>
               <div className="bar"><div style={{ width: `${Math.round(((dibujando.hechos + 0.3) / dibujando.total) * 100)}%` }} /></div>
-              <p className="muted">El guion ya está listo; puedes revisarlo mientras tanto.</p>
+              <p className="muted">El guion ya está listo; cada dibujo aparece en cuanto se termina.</p>
             </div>
           )}
           {avisoDibujo && <p className="error no-print">{avisoDibujo}</p>}
-          {proyecto && !cargando && <Resultado proyecto={proyecto} tab={tab} setTab={setTab} demo={demo} onChange={actualizar} dibujando={dibujando} onRedibujar={redibujar} />}
+          <Resultado proyecto={proyecto} tab={tab} setTab={setTab} demo={demo} onChange={actualizar} dibujando={dibujando} onRedibujar={redibujar} />
         </section>
-      </div>
+      )}
     </main>
   );
 }
 
-function Progreso({ etapa, chars, segundos }: { etapa: number; chars: number; segundos: number }) {
-  // Mientras piensa (sin texto aún) la barra avanza despacio hasta 8 %; luego, por secciones.
-  const pct = etapa < 0 ? Math.min(8, 2 + segundos / 10) : Math.round(8 + ((etapa + 0.5) / ETAPAS.length) * 92);
-  const tiempo = `${Math.floor(segundos / 60)}:${String(segundos % 60).padStart(2, "0")}`;
+function ProyectoHead({ proyecto, onVolver }: { proyecto: Proyecto; onVolver: () => void }) {
+  const p = proyecto.paquete;
+  const b = proyecto.brief;
+  const [n, setN] = useState<number | null>(null);
+  useEffect(() => {
+    setN(diasPara(b.fechaRodaje));
+  }, [b.fechaRodaje]);
+  const portada = p.storyboard.find((f) => f.imagen || f.svg);
   return (
-    <div className="card progress">
-      <div className="progress-head">
-        <b>{etapa < 0 ? "Analizando el brief y planeando el video…" : `Escribiendo: ${ETAPAS[etapa][1]}`}</b>
-        <span className="mono">{tiempo}</span>
+    <section className="st-phead">
+      <div className="st-phead-copy">
+        <button type="button" className="st-back no-print" onClick={onVolver}>← Proyectos</button>
+        <span className="kicker">{b.fechaRodaje ? `Rodaje ${fechaCorta(b.fechaRodaje)} · ${cuentaTexto(n, b.diasRodaje)}` : "Preproducción"}</span>
+        <h2>{p.resumen.titulo}</h2>
+        <p>{p.resumen.logline}</p>
+        <div className="st-phead-chips">
+          <span className="chip">{p.resumen.duracion || b.duracion}</span>
+          <span className="chip">{p.resumen.formato || b.formato}</span>
+          <span className="chip">{p.guionAudiovisual.length} escenas</span>
+          <span className="chip">{p.guionTecnico.length} tomas</span>
+          <span className="chip">{p.planRodaje.length} {p.planRodaje.length === 1 ? "día" : "días"}</span>
+          {b.incluirDron && <span className="chip accent">✈ Dron</span>}
+        </div>
       </div>
-      <div className="bar"><div style={{ width: `${pct}%` }} /></div>
-      <ol className="steps">
-        {ETAPAS.map(([k, label], i) => (
-          <li key={k} className={i < etapa ? "done" : i === etapa ? "now" : ""}>
-            {i < etapa ? "✓" : i === etapa ? "●" : "○"} {label}
-          </li>
-        ))}
-      </ol>
-      <p className="muted">{chars > 0 ? `${Math.round(chars / 1000)}k caracteres escritos · ` : ""}Suele tardar de 1 a 4 minutos. No cierres esta pestaña.</p>
-    </div>
+      {portada && (
+        <div className="vf st-phead-cover no-print">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={portada.imagen || svgSrc(portada.svg!)} alt="" />
+          <span className="vf-tag">{portada.planoId}</span>
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -499,8 +393,7 @@ function Resultado({ proyecto, tab, setTab, demo, onChange, dibujando, onRedibuj
       </div>
 
       <div className={show("resumen")}>
-        <h2>{p.resumen.titulo}</h2>
-        <p className="logline">{p.resumen.logline}</p>
+        <h2>Resumen</h2>
         <dl className="grid">
           <dt>Objetivo</dt><dd>{p.resumen.objetivo}</dd>
           <dt>Público</dt><dd>{p.resumen.publico}</dd>
@@ -657,35 +550,6 @@ function Resultado({ proyecto, tab, setTab, demo, onChange, dibujando, onRedibuj
   );
 }
 
-// Quién filma: define cuántas cámaras hay y a quién le llega cada hoja de llamado.
-function EquipoForm({ equipo, dron, onChange }: { equipo: Operador[]; dron: boolean; onChange: (eq: Operador[]) => void }) {
-  const camaras = equipo.filter((o) => o.tipo === "camara").length;
-  const editar = (id: string, k: "nombre" | "contacto" | "equipo", v: string) => onChange(equipo.map((o) => (o.id === id ? { ...o, [k]: v } : o)));
-  return (
-    <fieldset className="crew-form">
-      <legend>Equipo de rodaje</legend>
-      <div className="crew-count">
-        Cámaras
-        <button type="button" onClick={() => onChange(ajustarEquipo(equipo, camaras - 1, dron))} disabled={camaras <= 1} aria-label="Quitar cámara">−</button>
-        <b>{camaras}</b>
-        <button type="button" onClick={() => onChange(ajustarEquipo(equipo, camaras + 1, dron))} disabled={camaras >= 6} aria-label="Agregar cámara">+</button>
-        {dron && <span className="muted">+ piloto de dron</span>}
-      </div>
-      {equipo.map((o) => (
-        <div key={o.id} className="crew-row">
-          <span>{o.rol}</span>
-          <input placeholder="Nombre" value={o.nombre} onChange={(e) => editar(o.id, "nombre", e.target.value)} />
-          <input placeholder="Teléfono" inputMode="tel" value={o.contacto} onChange={(e) => editar(o.id, "contacto", e.target.value)} />
-          {o.tipo !== "director" && (
-            <textarea className="crew-gear" rows={2} placeholder={ejemploEquipo(o)} value={o.equipo ?? ""} onChange={(e) => editar(o.id, "equipo", e.target.value)} />
-          )}
-        </div>
-      ))}
-      <p className="muted crew-hint">Con la cámara y lentes de cada quien, la IA arma tomas, storyboard y plan con ese equipo.</p>
-    </fieldset>
-  );
-}
-
 // Un link por persona del equipo; mismo registro, cada quien ve solo lo suyo.
 function LinksEquipo({ proyecto, onChange }: { proyecto: Proyecto; onChange: (p: Proyecto) => void }) {
   const equipo = equipoDe(proyecto.brief);
@@ -738,11 +602,11 @@ function LinksEquipo({ proyecto, onChange }: { proyecto: Proyecto; onChange: (p:
           <button className="primary" onClick={guardar} disabled={guardando}>
             {guardando ? "Guardando…" : proyecto.equipoShare ? "Actualizar links" : "👥 Crear links del equipo"}
           </button>
-          {base && <button onClick={() => setAbierto(!abierto)}>{abierto ? "Ocultar" : "Ver links"}</button>}
+          <button onClick={() => setAbierto(!abierto)}>{abierto ? "Ocultar" : base ? "Ver links" : "Editar equipo"}</button>
         </div>
       </div>
       {msg && <p className="muted">{msg}</p>}
-      {(abierto || !base) && (
+      {abierto && (
         <ul className="crew-list">
           {equipo.map((o) => {
             const url = base ? `${base}/${o.id}` : "";

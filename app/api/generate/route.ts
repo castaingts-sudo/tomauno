@@ -27,7 +27,7 @@ export async function POST(req: Request) {
         async start(controller) {
           for (let i = 0; i < body.length; i += 400) {
             controller.enqueue(encoder.encode(body.slice(i, i + 400)));
-            await new Promise((r) => setTimeout(r, 15));
+            await new Promise((r) => setTimeout(r, Number(process.env.TOMA_DEMO_DELAY) || 15));
           }
           controller.enqueue(encoder.encode(FIN));
           controller.close();
