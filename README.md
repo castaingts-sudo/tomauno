@@ -48,4 +48,4 @@ Abre la URL de Vercel en el teléfono → Compartir → "Agregar a pantalla de i
 
 Botón "Compartir con cliente": crea una página `/r/<id>` (sin login, no indexada) que solo muestra
 el guion audiovisual y el storyboard por escena, con comentarios por escena y botón Aprobar / Pedir cambios.
-En Vercel necesita un store **Blob** conectado al proyecto (Storage → Create → Blob); en local se guarda en `.data/`.
+En Vercel necesita `ANTHROPIC_API_KEY` y un store **Blob** conectado al proyecto (Storage → Create → Blob); en local se guarda en `.data/`.
