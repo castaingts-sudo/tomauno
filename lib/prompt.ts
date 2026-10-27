@@ -1,4 +1,4 @@
-import type { Brief } from "./types";
+import type { Brief, Paquete } from "./types";
 
 export const SYSTEM_PROMPT = `Eres un productor y director audiovisual con experiencia en publicidad, documental, redes sociales y cinematografía aérea con drones (RPAS). Conviertes la idea de un cliente en un paquete de preproducción completo y realista, listo para rodar.
 
@@ -83,9 +83,76 @@ export const STORYBOARD_SCHEMA = {
 };
 
 // Extrae el objeto JSON aunque el modelo agregue texto alrededor.
+// Si viene mal formado (comillas sin escapar, saltos de línea, comas de más), intenta repararlo.
 export function parsePaquete(text: string): unknown {
   const start = text.indexOf("{");
+  if (start === -1) throw new Error("La respuesta no contiene JSON");
   const end = text.lastIndexOf("}");
-  if (start === -1 || end === -1) throw new Error("La respuesta no contiene JSON");
-  return JSON.parse(text.slice(start, end + 1));
+  const body = end > start ? text.slice(start, end + 1) : text.slice(start);
+  try {
+    return JSON.parse(body);
+  } catch {
+    return JSON.parse(repararJson(text.slice(start)));
+  }
+}
+
+export function repararJson(src: string): string {
+  let out = "";
+  const pila: string[] = [];
+  let enCadena = false;
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+    if (enCadena) {
+      if (c === "\\") {
+        out += c + (src[i + 1] ?? "");
+        i++;
+      } else if (c === '"') {
+        // Una comilla solo cierra la cadena si lo que sigue es estructura JSON.
+        const sig = src.slice(i + 1).match(/^\s*(.)/)?.[1];
+        if (sig === undefined || ",:}]".includes(sig)) {
+          out += c;
+          enCadena = false;
+        } else out += '\\"';
+      } else if (c === "\n") out += "\\n";
+      else if (c === "\r") out += "";
+      else if (c === "\t") out += "\\t";
+      else out += c;
+      continue;
+    }
+    if (c === '"') enCadena = true;
+    else if (c === "{" || c === "[") pila.push(c === "{" ? "}" : "]");
+    else if (c === "}" || c === "]") {
+      out = out.replace(/,\s*$/, ""); // coma antes de cerrar
+      pila.pop();
+      out += c;
+      if (!pila.length) return out;
+      continue;
+    }
+    out += c;
+  }
+  // Respuesta cortada: cerrar lo que quedó abierto.
+  if (enCadena) out += '"';
+  out = out.replace(/,\s*$/, "").replace(/,\s*"[^"]*"\s*:?\s*$/, "").replace(/:\s*$/, ": null");
+  while (pila.length) out += pila.pop();
+  return out;
+}
+
+// Rellena secciones faltantes para que la interfaz nunca truene con un paquete incompleto.
+export function completarPaquete(p: Partial<Paquete>): Paquete {
+  if (!p.resumen || !Array.isArray(p.guionAudiovisual)) throw new Error("Paquete incompleto");
+  const arr = <T,>(x: T[] | undefined) => (Array.isArray(x) ? x : []);
+  return {
+    ...p,
+    resumen: p.resumen,
+    guionAudiovisual: p.guionAudiovisual,
+    guionTecnico: arr(p.guionTecnico),
+    storyboard: arr(p.storyboard),
+    planRodaje: arr(p.planRodaje),
+    equipo: arr(p.equipo),
+    crew: arr(p.crew),
+    locaciones: arr(p.locaciones),
+    presupuesto: { moneda: "MXN", total: "", notas: "", ...p.presupuesto, items: arr(p.presupuesto?.items) },
+    postproduccion: { edicion: "", color: "", audio: "", graficos: "", ...p.postproduccion, entregables: arr(p.postproduccion?.entregables) },
+    checklist: arr(p.checklist),
+  };
 }

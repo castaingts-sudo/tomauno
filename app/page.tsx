@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { parsePaquete } from "@/lib/prompt";
+import { completarPaquete, parsePaquete } from "@/lib/prompt";
 import { download, slug, toMarkdown } from "@/lib/export";
 import type { Brief, Paquete, Proyecto } from "@/lib/types";
 
@@ -135,7 +135,16 @@ export default function Home() {
       }
       const errIdx = text.indexOf("[[ERROR]]");
       if (errIdx !== -1) throw new Error(text.slice(errIdx + 9));
-      const paquete = parsePaquete(text) as Paquete;
+      const finIdx = text.lastIndexOf("[[FIN]]");
+      if (finIdx === -1) {
+        throw new Error("La generación se cortó antes de terminar (el servidor tiene un límite de 5 minutos). Vuelve a intentarlo; si se repite, baja la duración o el detalle del video.");
+      }
+      let paquete: Paquete;
+      try {
+        paquete = completarPaquete(parsePaquete(text.slice(0, finIdx)) as Partial<Paquete>);
+      } catch {
+        throw new Error("La respuesta llegó con un formato que no pude leer. Vuelve a generar, casi siempre sale bien al segundo intento.");
+      }
       const { pdf: _pdf, ...briefGuardado } = brief; // el PDF no cabe en el historial del navegador
       const nuevo: Proyecto = { id: crypto.randomUUID(), creado: new Date().toISOString(), brief: briefGuardado, paquete };
       const list = [nuevo, ...historial];

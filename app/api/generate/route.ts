@@ -7,6 +7,8 @@ export const runtime = "nodejs";
 export const maxDuration = 300;
 
 const MODEL = process.env.CLAUDE_MODEL || "claude-opus-5-5";
+// Marca de respuesta completa: si no llega, Vercel cortó la función por tiempo.
+const FIN = "\n[[FIN]]";
 
 // Devuelve el texto del modelo en streaming; el cliente arma el JSON al final.
 export async function POST(req: Request) {
@@ -27,6 +29,7 @@ export async function POST(req: Request) {
             controller.enqueue(encoder.encode(body.slice(i, i + 400)));
             await new Promise((r) => setTimeout(r, 15));
           }
+          controller.enqueue(encoder.encode(FIN));
           controller.close();
         },
       }),
@@ -65,6 +68,8 @@ export async function POST(req: Request) {
           controller.enqueue(encoder.encode("\n[[ERROR]]El modelo rechazó la solicitud."));
         } else if (final.stop_reason === "max_tokens") {
           controller.enqueue(encoder.encode("\n[[ERROR]]La respuesta se cortó por longitud. Reduce la duración o el detalle."));
+        } else {
+          controller.enqueue(encoder.encode(FIN));
         }
       } catch (err) {
         const msg =
