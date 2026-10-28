@@ -523,7 +523,7 @@ function Resultado({ proyecto, tab, setTab, demo, onChange, dibujando, onRedibuj
               <figure key={f.planoId}>
                 <div className="vf">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {f.imagen || f.svg ? <img src={f.imagen || svgSrc(f.svg!)} alt={f.descripcion} /> : <div className={`vf-empty${dibujando ? " busy" : ""}`}>{dibujando ? "Dibujando…" : "Sin boceto"}</div>}
+                  {f.imagen || f.svg ? <img src={f.imagen || svgSrc(f.svg!)} alt="" onError={(e) => { e.currentTarget.style.visibility = "hidden"; }} /> : <div className={`vf-empty${dibujando ? " busy" : ""}`}>{dibujando ? "Dibujando…" : "Sin boceto"}</div>}
                   <span className="vf-tag">{f.planoId}</span>
                   {plano && (
                     <span className="vf-meta">
