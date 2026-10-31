@@ -52,18 +52,18 @@
 .ld-head p { max-width: 560px; margin-top: 20px; font-size: 17px; }
 
 /* ───── Apertura: animatic en formato scope ───── */
-.ld-open { min-height: 100svh; padding-top: 84px; padding-bottom: 36px; display: flex; flex-direction: column; }
+.ld-open { padding-top: 84px; padding-bottom: 36px; display: flex; flex-direction: column; }
 .ld-open-top { width: min(100%, calc(58svh * 2.39)); margin-inline: auto; display: flex; justify-content: space-between; font: 500 10.5px var(--f-mono); letter-spacing: 0.22em; text-transform: uppercase; color: var(--ld-mute); padding: 0 2px 12px; }
 .ld-scope { position: relative; width: min(100%, calc(58svh * 2.39)); margin-inline: auto; aspect-ratio: 2.39 / 1; background: #000; overflow: hidden; animation: ld-iris 1.8s cubic-bezier(0.7, 0, 0.2, 1) both; }
 @keyframes ld-iris { from { clip-path: inset(50% 0 50% 0); } to { clip-path: inset(0 0 0 0); } }
-.ld-scope::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.75) 100%), linear-gradient(transparent 60%, rgba(0, 0, 0, 0.7)); }
+.ld-shot::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.7) 100%), linear-gradient(transparent 45%, rgba(0, 0, 0, 0.88)); }
 .ld-shot { position: absolute; inset: 0; margin: 0; opacity: 0; animation: ld-cut 24s linear infinite; animation-delay: calc(var(--i) * 6s); }
 .ld-shot img { width: 100%; height: 100%; object-fit: cover; display: block; filter: sepia(0.28) contrast(1.08) brightness(0.9); animation: ld-push 24s linear infinite; animation-delay: calc(var(--i) * 6s); }
 @keyframes ld-cut { 0% { opacity: 0; } 2.5% { opacity: 1; } 24% { opacity: 1; } 26.5% { opacity: 0; } 100% { opacity: 0; } }
-@keyframes ld-push { 0% { transform: scale(1.02) translate(0, 0); } 26% { transform: scale(1.12) translate(-1.5%, -1%); } 100% { transform: scale(1.12) translate(-1.5%, -1%); } }
+@keyframes ld-push { 0% { transform: scale(1.07) translate(0, 0); } 26% { transform: scale(1.15) translate(-1.5%, -1%); } 100% { transform: scale(1.15) translate(-1.5%, -1%); } }
 .ld-shot figcaption { position: absolute; inset: auto 0 0; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 0 20px 22px; }
 .ld-sub { font: italic 400 clamp(18px, 2.2vw, 32px) var(--f-serif); color: #fff; text-shadow: 0 2px 18px rgba(0, 0, 0, 0.9); text-align: center; }
-.ld-slate { font: 500 10px var(--f-mono); letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255, 255, 255, 0.7); text-align: center; }
+.ld-slate { font: 500 10px var(--f-mono); letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255, 255, 255, 0.85); text-align: center; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.9); }
 .ld-slate b { color: var(--ld-gold-t); font-weight: 600; margin-right: 6px; }
 .ld-slate i { font-style: normal; color: rgba(255, 255, 255, 0.35); margin: 0 4px; }
 .ld-corner { position: absolute; z-index: 3; width: 22px; height: 22px; border: 0 solid rgba(255, 255, 255, 0.55); }
@@ -78,7 +78,7 @@
 .ld-open-side p { font-size: 16.5px; max-width: 460px; margin: 0 0 26px; }
 @keyframes ld-rise { from { opacity: 0; transform: translateY(24px); filter: blur(6px); } }
 .ld-ctas { display: flex; flex-wrap: wrap; align-items: center; gap: 26px; }
-.ld-open > .ld-credit { margin: auto 0 0; padding-top: 34px; }
+.ld-open > .ld-credit { margin: 0; padding-top: 40px; }
 
 /* ───── Manifiesto ───── */
 .ld-manifesto { padding-block: clamp(90px, 14vw, 180px) 0; }
