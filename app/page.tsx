@@ -1,15 +1,16 @@
 import Link from "next/link";
 import "./landing.css";
 import { PLANES, planDe, precioTexto } from "@/lib/planes";
+import { Timecode } from "@/components/timecode";
 
 // Página de presentación: lo que ve un director o fotógrafo antes de entrar al estudio.
 
 // Dibujos reales hechos por el estudio (proyecto de muestra "Café de altura").
 const CUADROS = [
-  { id: "1A", plano: "GPG aéreo", lente: "24 mm", img: "/api/img/storyboard/JhSnNbIg5snLyw-1A.png", alt: "Vista aérea de la sierra con niebla y un camino hacia la finca" },
-  { id: "1B", plano: "PM gimbal", lente: "35 mm", img: "/api/img/storyboard/EQcJ7Ka9Yg-bbA-1B.png", alt: "Productora y su hijo caminan entre los cafetos" },
-  { id: "2A", plano: "PP", lente: "85 mm", img: "/api/img/storyboard/d8YhmVaIyKatzQ-2A.png", alt: "Primer plano de la productora con granos de café en la mano" },
-  { id: "3A", plano: "Órbita dron", lente: "24 mm", img: "/api/img/storyboard/HXPkpebjrtwN2w-3A.png", alt: "Órbita de dron sobre la casa de la finca y el patio de secado" },
+  { id: "1A", plano: "Gran plano general aéreo", lente: "24 mm · Dron", escena: "Ext. Sierra y cafetal · Amanecer", vo: "Antes del café, está la niebla.", img: "/api/img/storyboard/JhSnNbIg5snLyw-1A.png", alt: "Vista aérea de la sierra con niebla y un camino hacia la finca" },
+  { id: "1B", plano: "Plano medio en gimbal", lente: "35 mm · Cámara A", escena: "Ext. Cafetal · Mañana", vo: "Y alguien que la camina todos los días.", img: "/api/img/storyboard/EQcJ7Ka9Yg-bbA-1B.png", alt: "Productora y su hijo caminan entre los cafetos" },
+  { id: "2A", plano: "Primer plano", lente: "85 mm · Cámara B", escena: "Ext. Patio de secado · Mañana", vo: "Cada grano pasa por sus manos.", img: "/api/img/storyboard/d8YhmVaIyKatzQ-2A.png", alt: "Primer plano de la productora con granos de café en la mano" },
+  { id: "3A", plano: "Órbita de dron", lente: "24 mm · Dron", escena: "Ext. Casa de la finca · Atardecer", vo: "Nace en la niebla. Llega a tu taza.", img: "/api/img/storyboard/HXPkpebjrtwN2w-3A.png", alt: "Órbita de dron sobre la casa de la finca y el patio de secado" },
 ];
 
 const ENTREGA = [
@@ -24,9 +25,9 @@ const ENTREGA = [
 ];
 
 const PASOS = [
-  ["01", "Sube el brief", "Word, PDF o una idea escrita. Eliges cámaras, dron y fecha de rodaje."],
-  ["02", "Mira cómo se escribe", "Una sala de control muestra en vivo las escenas y tomas mientras se arma el proyecto."],
-  ["03", "Compártelo y filma", "El cliente comenta y aprueba. Tu equipo recibe su hoja por WhatsApp."],
+  ["I", "Sube el brief", "Word, PDF o una idea escrita. Eliges cámaras, dron y fecha de rodaje."],
+  ["II", "Mira cómo se escribe", "Una sala de control muestra en vivo las escenas y tomas mientras se arma el proyecto."],
+  ["III", "Compártelo y filma", "El cliente comenta y aprueba. Tu equipo recibe su hoja por WhatsApp."],
 ];
 
 // Precios y topes salen del mismo catálogo que cobra Stripe.
@@ -46,98 +47,108 @@ const PREGUNTAS = [
 export default function Landing() {
   return (
     <div className="ld">
+      <div className="ld-grain" aria-hidden />
       <header className="ld-nav">
         <Link href="/" className="ld-brand">
           <span className="ld-mark">T1</span>
-          Toma <em>uno</em>
+          <span>Toma <em>uno</em></span>
         </Link>
         <nav>
-          <a href="#como">Cómo funciona</a>
-          <a href="#entrega">Qué entrega</a>
+          <a href="#secuencia">Secuencia</a>
+          <a href="#como">Método</a>
+          <a href="#entrega">Créditos</a>
           <a href="#planes">Planes</a>
         </nav>
-        <Link href="/estudio" className="ld-btn ghost">Entrar al estudio</Link>
+        <Link href="/estudio" className="ld-link">Entrar al estudio</Link>
       </header>
 
-      <section className="ld-hero">
-        <div className="ld-hero-copy">
-          <span className="ld-rec"><i /> Estudio de preproducción</span>
+      {/* Apertura: el storyboard corre como animatic, en formato scope. */}
+      <section className="ld-open">
+        <div className="ld-open-top">
+          <span>Toma uno presenta</span>
+          <span className="ld-rec"><i /> REC <Timecode /></span>
+        </div>
+        <div className="ld-scope" aria-label="Storyboard de muestra: Nace en la niebla">
+          {CUADROS.map((c, i) => (
+            <figure key={c.id} className="ld-shot" style={{ ["--i" as string]: i }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={c.img} alt={c.alt} loading="eager" />
+              <figcaption>
+                <span className="ld-sub">{c.vo}</span>
+                <span className="ld-slate">
+                  <b>{c.id}</b> {c.escena} <i>·</i> {c.plano} <i>·</i> {c.lente}
+                </span>
+              </figcaption>
+            </figure>
+          ))}
+          <span className="ld-corner tl" /><span className="ld-corner tr" /><span className="ld-corner bl" /><span className="ld-corner br" />
+        </div>
+        <div className="ld-open-title">
           <h1>
-            Del brief
-            <br />a la <span>claqueta</span>.
+            Del brief <br />a la <em>claqueta.</em>
           </h1>
-          <p>
-            Sube el brief y en minutos tienes guion audiovisual, storyboard dibujado, guion técnico con ópticas y plan de rodaje con fecha real.
-            Escrito con criterio de cine, no de plantilla.
-          </p>
-          <div className="ld-ctas">
-            <Link href="/estudio" className="ld-btn">Empieza un proyecto</Link>
-            <a href="#planes" className="ld-btn ghost">Ver planes</a>
-          </div>
-          <ul className="ld-proof">
-            <li><b>8</b> entregables por proyecto</li>
-            <li><b>1</b> link por persona del equipo</li>
-            <li><b>0</b> plantillas genéricas</li>
-          </ul>
-        </div>
-
-        <div className="ld-window" aria-label="Vista del estudio">
-          <div className="ld-window-bar">
-            <span /><span /><span />
-            <b>Storyboard · Escena 01</b>
-            <em className="ld-tc">REC 00:00:12:08</em>
-          </div>
-          <div className="ld-frames">
-            {CUADROS.map((c, i) => (
-              <figure key={c.id} style={{ animationDelay: `${0.15 * i}s` }}>
-                <div className="ld-frame">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={c.img} alt={c.alt} loading="eager" style={{ animationDelay: `${0.25 + 0.2 * i}s` }} />
-                  <span className="ld-frame-id">{c.id}</span>
-                </div>
-                <figcaption>
-                  <b>{c.plano}</b>
-                  <span>{c.lente}</span>
-                </figcaption>
-              </figure>
-            ))}
-          </div>
-          <div className="ld-track">
-            {[18, 26, 30, 26].map((w, i) => (
-              <span key={i} style={{ flexGrow: w }}>
-                <b>{String(i + 1).padStart(2, "0")}</b>
-              </span>
-            ))}
-            <i className="ld-playhead" />
+          <div className="ld-open-side">
+            <p>Sube el brief y en minutos tienes guion, storyboard dibujado a lápiz, guion técnico con ópticas y plan de rodaje con fecha real. Escrito con criterio de cine, no de plantilla.</p>
+            <div className="ld-ctas">
+              <Link href="/estudio" className="ld-btn">Empieza un proyecto</Link>
+              <a href="#planes" className="ld-link">Ver planes →</a>
+            </div>
           </div>
         </div>
+        <p className="ld-credit">Muestra: <b>Nace en la niebla</b> · Café de altura, Chiapas · 30 s · Storyboard generado en Toma uno</p>
       </section>
 
-      <section className="ld-promo" aria-label="Toma uno en video">
-        <video className="ld-promo-video" autoPlay muted loop playsInline preload="metadata" poster="/promo/poster.jpg">
-          <source src="/promo/toma-uno-9x16.mp4" type="video/mp4" media="(max-width: 640px) and (orientation: portrait)" />
-          <source src="/promo/toma-uno-16x9.mp4" type="video/mp4" />
-        </video>
+      <section className="ld-manifesto">
+        <p>
+          Un buen rodaje se gana <em>antes</em> de encender la cámara. Toma uno piensa en lentes, luz y ritmo: la hora dorada, el eje, la voz en off que no repite lo que ya se ve. Para que llegues al set sabiendo <em>cada toma.</em>
+        </p>
+        <ul className="ld-for">
+          <li>Directores</li><li>Fotógrafos</li><li>Casas productoras</li><li>Agencias</li><li>Pilotos de dron</li>
+        </ul>
       </section>
 
-      <section className="ld-for">
-        <span>Para</span>
-        <b>Directores</b>
-        <b>Fotógrafos</b>
-        <b>Casas productoras</b>
-        <b>Agencias</b>
-        <b>Pilotos de dron</b>
-      </section>
-
-      <section id="como" className="ld-sec">
-        <header>
-          <span className="ld-kicker">Cómo funciona</span>
-          <h2>Tres pasos y estás listo para el llamado.</h2>
+      <section id="secuencia" className="ld-seq">
+        <header className="ld-head">
+          <span className="ld-kicker">Secuencia · Escenas 1 a 3</span>
+          <h2>Cada toma, <em>dibujada.</em></h2>
         </header>
-        <ol className="ld-steps">
+        <div className="ld-strip">
+          {CUADROS.map((c) => (
+            <figure key={c.id}>
+              <div className="ld-still">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={c.img} alt={c.alt} loading="lazy" />
+                <span>{c.id}</span>
+              </div>
+              <figcaption>
+                <b>{c.plano}</b>
+                <span>{c.lente}</span>
+                <em>“{c.vo}”</em>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </section>
+
+      <section className="ld-reel" aria-label="Toma uno en video">
+        <div className="ld-reel-frame">
+          <video autoPlay muted loop playsInline preload="metadata" poster="/promo/poster.jpg">
+            <source src="/promo/toma-uno-9x16.mp4" type="video/mp4" media="(max-width: 640px) and (orientation: portrait)" />
+            <source src="/promo/toma-uno-16x9.mp4" type="video/mp4" />
+          </video>
+        </div>
+        <p className="ld-credit">El estudio en 42 segundos</p>
+      </section>
+
+      <section id="como" className="ld-acts">
+        <header className="ld-head">
+          <span className="ld-kicker">El método</span>
+          <h2>Tres actos y estás <em>listo para el llamado.</em></h2>
+        </header>
+        <ol>
           {PASOS.map(([n, t, d]) => (
             <li key={n}>
-              <span>{n}</span>
+              <span className="ld-act">Acto {n}</span>
               <h3>{t}</h3>
               <p>{d}</p>
             </li>
@@ -145,53 +156,48 @@ export default function Landing() {
         </ol>
       </section>
 
-      <section id="entrega" className="ld-sec">
-        <header>
-          <span className="ld-kicker">Qué entrega</span>
-          <h2>Todo el paquete de preproducción, conectado.</h2>
-          <p>Si cambias una escena, la toma, el cuadro y la jornada lo saben.</p>
-        </header>
-        <div className="ld-grid">
-          {ENTREGA.map(([ico, t, d]) => (
-            <article key={t}>
-              <span className="ld-ico">{ico}</span>
-              <h3>{t}</h3>
-              <p>{d}</p>
-            </article>
+      <section id="entrega" className="ld-credits">
+        <span className="ld-kicker">Lo que recibes</span>
+        <h2>Créditos de un <em>proyecto.</em></h2>
+        <dl>
+          {ENTREGA.map(([, t, d]) => (
+            <div key={t}>
+              <dt>{t}</dt>
+              <dd>{d}</dd>
+            </div>
           ))}
-        </div>
+        </dl>
       </section>
 
-      <section className="ld-sec ld-split">
+      <section className="ld-callsheet">
         <div>
-          <span className="ld-kicker">Un link para cada quien</span>
-          <h2>Cada persona ve solo lo que le toca.</h2>
+          <span className="ld-kicker">Hoja de llamado</span>
+          <h2>Cada quien ve <em>solo lo suyo.</em></h2>
           <p>El cliente aprueba el guion y el storyboard. El fotógrafo abre su hoja con sus tomas, lentes y horario. El piloto, sus vuelos con altura y normativa.</p>
         </div>
-        <ul className="ld-roles">
-          <li><i className="c1" /><b>Cliente</b><span>Guion + storyboard · comenta y aprueba</span></li>
-          <li><i className="c2" /><b>Director</b><span>Todo el proyecto, sin presupuesto</span></li>
-          <li><i className="c3" /><b>Cámara A</b><span>12 tomas · 24-70 mm · llamado 06:00</span></li>
-          <li><i className="c4" /><b>Piloto de dron</b><span>4 vuelos · 60 m AGL · ND 16</span></li>
-        </ul>
+        <table>
+          <thead>
+            <tr><th>Rol</th><th>Ve</th><th>Llamado</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Cliente</td><td>Guion + storyboard · comenta y aprueba</td><td>—</td></tr>
+            <tr><td>Director</td><td>Todo el proyecto</td><td>05:45</td></tr>
+            <tr><td>Cámara A</td><td>12 tomas · 24-70 mm</td><td>06:00</td></tr>
+            <tr><td>Piloto de dron</td><td>4 vuelos · 60 m AGL · ND 16</td><td>06:15</td></tr>
+          </tbody>
+        </table>
       </section>
 
-      <section className="ld-sec ld-split rev">
-        <div>
-          <span className="ld-kicker">Criterio de director</span>
-          <h2>Piensa en lentes, luz y ritmo.</h2>
-          <p>Cada proyecto se escribe con un manual de dirección: lenguaje de cámara, escuelas de fotografía, hora dorada, voz en off que no describe lo que ya se ve y ritmo de edición según el formato.</p>
-        </div>
-        <div className="ld-quote">
-          <span className="ld-lab">Toma 2A · Plano medio</span>
-          <p>“Push-in lento de 35 a 50 mm mientras ella entiende la palabra. La luz entra por la ventana a la izquierda; el corte llega con la mirada.”</p>
-        </div>
+      <section className="ld-quote">
+        <span className="ld-kicker">Toma 2A · Plano medio · 50 mm</span>
+        <blockquote>“Push-in lento de 35 a 50 mm mientras ella entiende la palabra. La luz entra por la ventana a la izquierda; el corte llega con la mirada.”</blockquote>
+        <p>Así se escribe cada toma.</p>
       </section>
 
-      <section id="planes" className="ld-sec">
-        <header>
+      <section id="planes" className="ld-plans-sec">
+        <header className="ld-head">
           <span className="ld-kicker">Planes</span>
-          <h2>Paga por proyecto o suscríbete.</h2>
+          <h2>Paga por proyecto <em>o suscríbete.</em></h2>
           <p>Precios en pesos mexicanos. Cobramos por tomas porque es lo que mide el tamaño real de un proyecto.</p>
         </header>
         <div className="ld-plans">
@@ -204,7 +210,7 @@ export default function Landing() {
           <div className="ld-cards proyecto">
             {POR_PROYECTO.map((p) => (
               <article key={p.n} className={p.top ? "destacado" : ""}>
-                {p.top && <span className="ld-badge">El más usado</span>}
+                <span className="ld-badge">{p.top ? "El más usado" : "\u00a0"}</span>
                 <h3>{p.n}</h3>
                 <p className="ld-tope">{p.tope}</p>
                 <p className="ld-price"><small>$</small>{p.precio}<small> MXN</small></p>
@@ -220,7 +226,7 @@ export default function Landing() {
           <div className="ld-cards mes">
             {MENSUAL.map((p) => (
               <article key={p.n} className={p.top ? "destacado" : ""}>
-                {p.top && <span className="ld-badge">Recomendado</span>}
+                <span className="ld-badge">{p.top ? "Recomendado" : "\u00a0"}</span>
                 <h3>{p.n}</h3>
                 <p className="ld-tope">{p.tope}</p>
                 <p className="ld-price"><small>$</small>{p.precio}<small> MXN / mes</small></p>
@@ -236,10 +242,10 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="ld-sec ld-faq">
-        <header>
+      <section className="ld-faq">
+        <header className="ld-head">
           <span className="ld-kicker">Preguntas</span>
-          <h2>Lo que nos preguntan en set.</h2>
+          <h2>Lo que nos preguntan <em>en set.</em></h2>
         </header>
         {PREGUNTAS.map(([q, a]) => (
           <details key={q}>
@@ -250,13 +256,13 @@ export default function Landing() {
       </section>
 
       <section className="ld-final">
-        <span className="ld-rec"><i /> Listos</span>
-        <h2>Tu próximo rodaje empieza aquí.</h2>
+        <p className="ld-slate-final"><span>Escena 1</span><span>Toma 1</span><span>Rollo A</span></p>
+        <h2>Tu próximo rodaje <em>empieza aquí.</em></h2>
         <Link href="/estudio" className="ld-btn">Empieza un proyecto</Link>
       </section>
 
       <footer className="ld-foot">
-        <span className="ld-brand small"><span className="ld-mark">T1</span> Toma <em>uno</em></span>
+        <span className="ld-brand small"><span className="ld-mark">T1</span> <span>Toma <em>uno</em></span></span>
         <span>Estudio de preproducción · Hecho en México</span>
       </footer>
     </div>
