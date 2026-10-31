@@ -29,14 +29,14 @@ const PASOS = [
 ];
 
 const POR_PROYECTO = [
-  { n: "Spot / redes", tope: "Hasta 3 min · 30 tomas", precio: "349" },
-  { n: "Institucional", tope: "Hasta 8 min · 60 tomas", precio: "790", top: true },
-  { n: "Cortometraje", tope: "Hasta 20 min · 120 tomas", precio: "1,690" },
+  { n: "Spot / redes", tope: "Hasta 3 min · 30 tomas", precio: "1,490" },
+  { n: "Institucional", tope: "Hasta 8 min · 60 tomas", precio: "2,990", top: true },
+  { n: "Cortometraje", tope: "Hasta 20 min · 120 tomas", precio: "5,990" },
 ];
 
 const MENSUAL = [
-  { n: "Pro", tope: "250 tomas al mes · 1 usuario", precio: "1,290", top: true, extra: "Para directores y fotógrafos que filman cada semana." },
-  { n: "Estudio", tope: "800 tomas al mes · equipo", precio: "3,490", extra: "Para casas productoras con varios directores." },
+  { n: "Pro", tope: "250 tomas al mes · 1 usuario", precio: "3,990", top: true, extra: "Para directores y fotógrafos que filman cada semana." },
+  { n: "Estudio", tope: "800 tomas al mes · equipo", precio: "9,990", extra: "Para casas productoras con varios directores." },
 ];
 
 const PREGUNTAS = [
@@ -223,7 +223,7 @@ export default function Landing() {
                 <ul>
                   <li>{p.extra}</li>
                   <li>Redibujos ilimitados dentro de tu bolsa</li>
-                  <li>Paquete extra de 25 tomas: $149</li>
+                  <li>Paquete extra de 25 tomas: $490</li>
                 </ul>
                 <Link href="/estudio" className={p.top ? "ld-btn" : "ld-btn ghost"}>Empezar</Link>
               </article>
