@@ -189,3 +189,4 @@ html, body { overflow-x: hidden; }
 .tu { min-width: 0; overflow-x: clip; }
 .tu-chips .chip { white-space: normal; border-radius: 10px; max-width: 100%; text-align: left; line-height: 1.4; overflow-wrap: anywhere; }
 .tu-hero h1, .tu-logline { overflow-wrap: anywhere; }
+.rv-animatic { margin-top: 16px; font-size: 15px; padding: 12px 20px; cursor: pointer; }

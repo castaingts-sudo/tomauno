@@ -5,6 +5,7 @@ import { useState, type ReactNode } from "react";
 import { svgSrc } from "@/components/estudio";
 import { equipoDe } from "@/lib/equipo";
 import { gearDe } from "@/lib/camaras";
+import { Animatic } from "@/components/animatic";
 import { adivinarLugar, ClimaDia, ClimaLugar, useClima } from "@/components/clima";
 import type { Jornada, Paquete, Plano, Proyecto } from "@/lib/types";
 
@@ -139,10 +140,12 @@ export function Libro({ proyecto, tab, edit, onChange, irA, dibujando, onRedibuj
   });
   const total = acc;
   const wx = useClima(proyecto, onChange);
+  const [animatic, setAnimatic] = useState(false);
   const dron = b.incluirDron || p.guionTecnico.some((s) => /dron/i.test(`${s.camara} ${s.operador}`));
 
   return (
     <div className="lb">
+      {animatic && <Animatic p={p} onClose={() => setAnimatic(false)} />}
       <Resumen p={p} b={b} tiempos={tiempos} total={total} irA={irA} tab={tab} edit={edit} set={set} />
 
       <Sec id="audiovisual" tab={tab} kicker={`${p.guionAudiovisual.length} escenas · ${tc(total)}`} titulo="Guion audiovisual">
@@ -199,7 +202,12 @@ export function Libro({ proyecto, tab, edit, onChange, irA, dibujando, onRedibuj
         tab={tab}
         kicker={`${p.storyboard.length} cuadros`}
         titulo="Storyboard"
-        extra={<button className="no-print" disabled={!!dibujando} onClick={() => onRedibujar(proyecto)}>↻ Volver a dibujar</button>}
+        extra={
+          <span className="lb-sb-acc no-print">
+            <button className="primary" disabled={!p.storyboard.some((f) => f.imagen || f.svg)} onClick={() => setAnimatic(true)}>▶ Ver animatic</button>
+            <button disabled={!!dibujando} onClick={() => onRedibujar(proyecto)}>↻ Volver a dibujar</button>
+          </span>
+        }
       >
         <div className="board">
           {p.storyboard.map((f) => {

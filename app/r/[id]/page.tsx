@@ -4,6 +4,7 @@ import { Countdown, ThemeToggle } from "@/components/share-ui";
 import { ID_RE, segundos, tc, type Comentario, type RevisionGuardada } from "@/lib/share";
 import { listJson, readJson } from "@/lib/store";
 import { Aprobacion, ComentarEscena } from "./feedback";
+import { AnimaticCliente } from "@/components/animatic";
 import "../../share.css";
 
 export const dynamic = "force-dynamic";
@@ -64,6 +65,7 @@ export default async function RevisionPage({ params }: { params: Promise<{ id: s
             <span key={c} className="chip">{c}</span>
           ))}
         </div>
+        <AnimaticCliente titulo={rev.titulo} escenas={rev.escenas} />
         {ultimo && (
           <p className={`rv-status ${ultimo.tipo}`}>
             {ultimo.tipo === "aprobado" ? "● Aprobado" : "● Cambios solicitados"} por {ultimo.nombre} ·{" "}
