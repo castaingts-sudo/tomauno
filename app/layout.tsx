@@ -7,7 +7,7 @@ const text = Inter({ subsets: ["latin"], variable: "--font-text", display: "swap
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", display: "swap" });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://toma1.com.mx"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.toma1.com.mx"),
   title: "Toma uno · Preproducción de video",
   description: "De la idea al guion, storyboard y plan de rodaje.",
   icons: { icon: "/icon.svg", apple: "/apple-touch-icon.png" },
