@@ -1,616 +1,313 @@
-"use client";
+import Link from "next/link";
+import "./landing.css";
 
-import { useEffect, useState } from "react";
-import { ajustarEquipo, equipoDe, tomasDe } from "@/lib/equipo";
-import { completarPaquete, parsePaquete } from "@/lib/prompt";
-import { ThemeToggle } from "@/components/share-ui";
-import { NuevoProyecto, SalaControl, SelectorCamara, Tablero, cuentaTexto, diasPara, fechaCorta, svgSrc } from "@/components/estudio";
-import { download, slug, toMarkdown } from "@/lib/export";
-import { Libro, moverFechas } from "@/components/libro";
-import type { Brief, Operador, Paquete, Proyecto } from "@/lib/types";
+// Página de presentación: lo que ve un director o fotógrafo antes de entrar al estudio.
 
-const STORAGE_KEY = "toma-uno:proyectos";
-const BORRADOR_KEY = "toma-uno:borrador";
-const LECTURAS_KEY = "toma-uno:lecturas-opus"; // lecturas hechas con Opus
-
-type Lectura = { campos: Partial<Brief> & { camaras?: number }; documento?: string; archivo: string };
-
-async function huella(file: File): Promise<string> {
-  const h = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
-  return Array.from(new Uint8Array(h), (b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-const base64De = (file: File) =>
-  new Promise<string>((ok, fail) => {
-    const r = new FileReader();
-    r.onload = () => ok(String(r.result).split(",")[1] ?? "");
-    r.onerror = () => fail(r.error);
-    r.readAsDataURL(file);
-  });
-
-// Briefs ya leídos, por huella del archivo: volver a subir el mismo no gasta otra lectura.
-function leerLecturas(): Record<string, Lectura> {
-  try {
-    return JSON.parse(localStorage.getItem(LECTURAS_KEY) || "{}");
-  } catch {
-    return {};
-  }
-}
-
-function guardarLectura(hash: string, l: Lectura) {
-  const todas = Object.entries({ ...leerLecturas(), [hash]: l }).slice(-10);
-  try {
-    localStorage.setItem(LECTURAS_KEY, JSON.stringify(Object.fromEntries(todas)));
-  } catch {}
-}
-
-const ETIQUETA = {
-  resumen: "Resumen",
-  audiovisual: "Guion audiovisual",
-  storyboard: "Storyboard",
-  tecnico: "Guion técnico",
-  rodaje: "Plan de rodaje",
-  locaciones: "Locaciones",
-  equipo: "Equipo y crew",
-  presupuesto: "Presupuesto",
-  post: "Post y entregas",
-  compartir: "Compartir",
-} as const;
-type Tab = keyof typeof ETIQUETA;
-const ICONOS: Record<Tab, string> = { resumen: "◎", audiovisual: "¶", storyboard: "▦", tecnico: "◫", rodaje: "▤", locaciones: "⌖", equipo: "◉", presupuesto: "$", post: "✓", compartir: "↗" };
-const GRUPOS: [string, Tab[]][] = [
-  ["Proyecto", ["resumen"]],
-  ["Historia", ["audiovisual", "storyboard", "tecnico"]],
-  ["Rodaje", ["rodaje", "locaciones", "equipo"]],
-  ["Producción", ["presupuesto", "post", "compartir"]],
+const CUADROS = [
+  {
+    id: "1A",
+    plano: "GPG aéreo",
+    lente: "24 mm",
+    svg: (
+      <svg viewBox="0 0 320 180" aria-hidden>
+        <path d="M0 120 L60 70 L105 98 L160 40 L225 92 L270 62 L320 96" />
+        <path d="M0 150 Q160 118 320 150" className="soft" />
+        <path d="M120 150 L150 128 L190 128 L215 150" className="soft" />
+        <path d="M168 140 L168 98 M160 108 L168 96 L176 108" className="arrow" />
+        <circle cx="262" cy="34" r="12" className="soft" />
+      </svg>
+    ),
+  },
+  {
+    id: "1B",
+    plano: "PM gimbal",
+    lente: "35 mm",
+    svg: (
+      <svg viewBox="0 0 320 180" aria-hidden>
+        <path d="M0 140 L320 140" className="soft" />
+        <circle cx="130" cy="52" r="13" />
+        <path d="M130 65 L130 108 M130 78 L110 98 M130 78 L152 92 M130 108 L116 140 M130 108 L144 140" />
+        <circle cx="196" cy="56" r="12" />
+        <path d="M196 68 L196 108 M196 80 L178 96 M196 80 L216 98 M196 108 L184 140 M196 108 L208 140" />
+        <path d="M60 160 L260 160 M246 152 L260 160 L246 168" className="arrow" />
+      </svg>
+    ),
+  },
+  {
+    id: "2A",
+    plano: "PP",
+    lente: "85 mm",
+    svg: (
+      <svg viewBox="0 0 320 180" aria-hidden>
+        <ellipse cx="160" cy="92" rx="46" ry="58" />
+        <path d="M138 84 Q146 78 154 84 M168 84 Q176 78 184 84" />
+        <path d="M150 122 Q160 130 172 122" />
+        <path d="M160 92 L156 108 L164 108" className="soft" />
+        <path d="M100 180 Q160 140 220 180" />
+        <path d="M40 30 L40 150 M280 30 L280 150" className="soft" />
+      </svg>
+    ),
+  },
+  {
+    id: "3A",
+    plano: "Órbita dron",
+    lente: "24 mm",
+    svg: (
+      <svg viewBox="0 0 320 180" aria-hidden>
+        <path d="M0 132 L320 132" className="soft" />
+        <path d="M140 132 L140 92 L180 92 L180 132 M132 92 L160 70 L188 92" />
+        <ellipse cx="160" cy="108" rx="120" ry="44" className="arrow dash" />
+        <path d="M268 96 L280 108 L264 112" className="arrow" />
+        <circle cx="56" cy="40" r="4" />
+        <path d="M44 40 L68 40 M56 28 L56 52" className="soft" />
+      </svg>
+    ),
+  },
 ];
 
-const EMPTY: Brief = { idea: "", duracion: "60 s", formato: "16:9 YouTube", estilo: "", presupuesto: "medio", incluirDron: true, notas: "" };
+const ENTREGA = [
+  ["¶", "Guion audiovisual", "A dos columnas, imagen y sonido, con voz en off, música y timecode por escena."],
+  ["▦", "Storyboard dibujado", "Cada toma a lápiz, con flechas de movimiento de cámara y su óptica."],
+  ["◫", "Guion técnico", "Tamaño de plano, ángulo, movimiento, lente y quién la filma: cámara A, B o dron."],
+  ["▤", "Plan de rodaje", "Jornadas con fecha real, llamado y horario pensado en la hora dorada."],
+  ["◉", "Hojas de llamado", "Un link para cada quien. El fotógrafo ve sus tomas y el piloto, sus vuelos."],
+  ["⌖", "Locaciones y permisos", "Riesgos, permisos y normativa de dron (AFAC) por locación."],
+  ["$", "Presupuesto", "Estimado por rubro en pesos, listo para ajustar y cotizar."],
+  ["✓", "Post y entregables", "Edición, color, audio, gráficos y versiones 60/30/15 en vertical."],
+];
 
-function loadProyectos(): Proyecto[] {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-  } catch {
-    return [];
-  }
-}
+const PASOS = [
+  ["01", "Sube el brief", "Word, PDF o una idea escrita. Eliges cámaras, dron y fecha de rodaje."],
+  ["02", "Mira cómo se escribe", "Una sala de control muestra en vivo las escenas y tomas mientras se arma el proyecto."],
+  ["03", "Compártelo y filma", "El cliente comenta y aprueba. Tu equipo recibe su hoja por WhatsApp."],
+];
 
-function saveProyectos(list: Proyecto[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list.slice(0, 20)));
-  } catch {}
-}
+const POR_PROYECTO = [
+  { n: "Spot / redes", tope: "Hasta 3 min · 30 tomas", precio: "349" },
+  { n: "Institucional", tope: "Hasta 8 min · 60 tomas", precio: "790", top: true },
+  { n: "Cortometraje", tope: "Hasta 20 min · 120 tomas", precio: "1,690" },
+];
 
-export default function Home() {
-  const [brief, setBrief] = useState<Brief>(EMPTY);
-  const [proyecto, setProyecto] = useState<Proyecto | null>(null);
-  const [historial, setHistorial] = useState<Proyecto[]>([]);
-  const [listo, setListo] = useState(false);
-  const [creando, setCreando] = useState(false);
-  const [tab, setTab] = useState<Tab>("resumen");
-  const [cargando, setCargando] = useState(false);
-  const [texto, setTexto] = useState("");
-  const [inicio, setInicio] = useState(0);
-  const [ahora, setAhora] = useState(0);
+const MENSUAL = [
+  { n: "Pro", tope: "250 tomas al mes · 1 usuario", precio: "1,290", top: true, extra: "Para directores y fotógrafos que filman cada semana." },
+  { n: "Estudio", tope: "800 tomas al mes · equipo", precio: "3,490", extra: "Para casas productoras con varios directores." },
+];
 
-  useEffect(() => {
-    if (!cargando) return;
-    const t = setInterval(() => setAhora(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, [cargando]);
-  const [error, setError] = useState("");
-  const [demo, setDemo] = useState(false);
-  const [leyendo, setLeyendo] = useState(false);
-  const [dibujando, setDibujando] = useState<{ hechos: number; total: number } | null>(null);
-  const [avisoDibujo, setAvisoDibujo] = useState("");
+const PREGUNTAS = [
+  ["¿Qué cuenta como una toma?", "Cada plano del guion técnico con su cuadro de storyboard. Un spot de 30 segundos suele tener entre 12 y 25 tomas."],
+  ["¿Puedo corregir lo que escribe?", "Sí. Todo el guion, las tomas y el plan se editan en sitio, y el storyboard se vuelve a dibujar cuando quieras."],
+  ["¿Sirve para tomas aéreas?", "Está pensado con pilotos RPAS: alturas, tipos de toma, viento, baterías y normativa AFAC vienen en cada plan."],
+  ["¿Mis clientes necesitan cuenta?", "No. Reciben un link para ver el guion y el storyboard, comentar y aprobar desde el celular."],
+];
 
-  useEffect(() => {
-    setHistorial(loadProyectos());
-    try {
-      const b = JSON.parse(localStorage.getItem(BORRADOR_KEY) || "null");
-      if (b?.idea !== undefined) setBrief(b);
-    } catch {}
-    setListo(true);
-  }, []);
-
-  // El formulario sobrevive a recargas y a generaciones fallidas.
-  useEffect(() => {
-    if (!listo) return;
-    try {
-      localStorage.setItem(BORRADOR_KEY, JSON.stringify(brief));
-    } catch {
-      try {
-        const { pdf: _pdf, ...sinPdf } = brief;
-        localStorage.setItem(BORRADOR_KEY, JSON.stringify(sinPdf));
-      } catch {}
-    }
-  }, [brief, listo]);
-
-  // Cada vista arriba de la página, como cambiar de pantalla.
-  const vista = cargando ? "generando" : proyecto ? "proyecto" : creando ? "nuevo" : "tablero";
-  useEffect(() => {
-    window.scrollTo({ top: 0 });
-  }, [vista]);
-
-  async function subirBrief(file: File | undefined) {
-    if (!file) return;
-    setLeyendo(true);
-    setError("");
-    try {
-      const hash = await huella(file).catch(() => "");
-      const guardada = hash ? leerLecturas()[hash] : undefined;
-      let j: Lectura & { pdf?: string };
-      if (guardada) {
-        j = { ...guardada, pdf: /\.pdf$/i.test(file.name) ? await base64De(file) : undefined };
-      } else {
-        const fd = new FormData();
-        fd.append("file", file);
-        const res = await fetch("/api/extract", { method: "POST", body: fd });
-        j = await res.json().catch(() => ({ error: `Error ${res.status}` }));
-        if (!res.ok) throw new Error((j as { error?: string }).error || `Error ${res.status}`);
-        if (hash) guardarLectura(hash, { campos: j.campos, documento: j.documento, archivo: j.archivo });
-      }
-      // Solo se sobrescriben los campos que el brief trae con contenido.
-      const { camaras, ...campos } = j.campos;
-      if (!campos.diasRodaje) delete campos.diasRodaje;
-      const llenos = Object.fromEntries(Object.entries(campos).filter(([, v]) => v !== "" && v != null));
-      setBrief((b) => {
-        const nb = { ...b, ...llenos, archivo: j.archivo, documento: j.documento, pdf: j.pdf };
-        const actual = equipoDe(b);
-        const n = camaras || actual.filter((o) => o.tipo === "camara").length;
-        return { ...nb, equipoRodaje: ajustarEquipo(actual, n, nb.incluirDron) };
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLeyendo(false);
-    }
-  }
-
-  const quitarBrief = () => setBrief((b) => ({ ...b, archivo: undefined, documento: undefined, pdf: undefined }));
-
-  // Corre una etapa en streaming; "antes" es lo ya escrito, para que la sala de control siga mostrando todo.
-  async function correrEtapa(etapa: 1 | 2, previo?: string, antes = ""): Promise<string> {
-    const res = await fetch("/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ brief, etapa, previo }),
-    });
-    if (!res.ok || !res.body) {
-      const j = await res.json().catch(() => ({}));
-      throw new Error(j.error || `Error ${res.status}`);
-    }
-    setDemo(res.headers.get("X-Toma-Uno-Mode") === "demo");
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let text = "";
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      text += decoder.decode(value, { stream: true });
-      setTexto(antes + text);
-    }
-    const errIdx = text.indexOf("[[ERROR]]");
-    if (errIdx !== -1) throw new Error(text.slice(errIdx + 9));
-    const finIdx = text.lastIndexOf("[[FIN]]");
-    if (finIdx === -1) {
-      throw new Error(`La ${etapa === 1 ? "primera" : "segunda"} etapa se cortó antes de terminar (el servidor tiene un límite de 5 minutos). Vuelve a intentarlo.`);
-    }
-    return text.slice(0, finIdx);
-  }
-
-  function leerParte(t: string): Partial<Paquete> {
-    try {
-      return parsePaquete(t) as Partial<Paquete>;
-    } catch {
-      throw new Error("La respuesta llegó con un formato que no pude leer. Vuelve a generar, casi siempre sale bien al segundo intento.");
-    }
-  }
-
-  async function generar() {
-    setCargando(true);
-    setError("");
-    setTexto("");
-    setInicio(Date.now());
-    setAhora(Date.now());
-    try {
-      // Etapa 1: guion y tomas. Etapa 2: plan, equipo y presupuesto, con la etapa 1 como contexto.
-      const t1 = await correrEtapa(1);
-      const parte1 = leerParte(t1);
-      const previo = JSON.stringify({ resumen: parte1.resumen, guionAudiovisual: parte1.guionAudiovisual, guionTecnico: parte1.guionTecnico });
-      const t2 = await correrEtapa(2, previo, t1);
-      const parte2 = leerParte(t2);
-      let paquete: Paquete;
-      try {
-        paquete = completarPaquete({ ...parte1, ...parte2 });
-      } catch {
-        throw new Error("La respuesta llegó con un formato que no pude leer. Vuelve a generar, casi siempre sale bien al segundo intento.");
-      }
-      const { pdf: _pdf, ...briefGuardado } = brief; // el PDF no cabe en el historial del navegador
-      const nuevo: Proyecto = { id: crypto.randomUUID(), creado: new Date().toISOString(), brief: briefGuardado, paquete };
-      const list = [nuevo, ...historial];
-      setHistorial(list);
-      saveProyectos(list);
-      setProyecto(nuevo);
-      setCreando(false);
-      setBrief(EMPTY);
-      try {
-        localStorage.removeItem(BORRADOR_KEY);
-      } catch {}
-      setTab("storyboard");
-      dibujarStoryboard(nuevo);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setCargando(false);
-    }
-  }
-
-  // Los bocetos se piden aparte, en lotes paralelos, para no rebasar el límite de tiempo de Vercel.
-  async function dibujarStoryboard(p: Proyecto) {
-    const pendientes = p.paquete.guionTecnico.filter((s) => {
-      const f = p.paquete.storyboard.find((x) => x.planoId === s.id);
-      return !f?.svg && !f?.imagen;
-    });
-    const contexto = { titulo: p.paquete.resumen.titulo, escenas: p.paquete.guionAudiovisual.map((e) => ({ numero: e.numero, encabezado: e.encabezado })) };
-    if (!pendientes.length) return;
-    setAvisoDibujo("");
-    const lotes: (typeof pendientes)[] = [];
-    for (let i = 0; i < pendientes.length; i += 4) lotes.push(pendientes.slice(i, i + 4));
-    let hechos = 0;
-    setDibujando({ hechos, total: lotes.length });
-    const dibujos: Record<string, { svg?: string; imagen?: string }> = {};
-    await Promise.all(
-      lotes.map(async (planos) => {
-        try {
-          const res = await fetch("/api/storyboard", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ planos, estilo: p.brief.estilo, contexto }),
-          });
-          const j = await res.json();
-          for (const panel of j.paneles ?? []) dibujos[panel.planoId] = { svg: panel.svg, imagen: panel.imagen };
-          if (j.aviso) setAvisoDibujo(`El generador de dibujos falló y se usaron bocetos simples: ${j.aviso}`);
-        } catch {}
-        hechos++;
-        setDibujando({ hechos, total: lotes.length });
-        // Muestra cada lote en cuanto llega.
-        const storyboard = p.paquete.storyboard.map((f) => (dibujos[f.planoId] ? { ...f, ...dibujos[f.planoId] } : f));
-        const actualizado = { ...p, paquete: { ...p.paquete, storyboard } };
-        setProyecto((cur) => (cur?.id === p.id ? actualizado : cur));
-        setHistorial((list) => {
-          const nueva = list.map((x) => (x.id === p.id ? actualizado : x));
-          saveProyectos(nueva);
-          return nueva;
-        });
-      }),
-    );
-    setDibujando(null);
-  }
-
-  // Borra los dibujos y los vuelve a pedir (p. ej. al activar el generador de imágenes).
-  function redibujar(p: Proyecto) {
-    const limpio = { ...p, paquete: { ...p.paquete, storyboard: p.paquete.storyboard.map(({ svg: _s, imagen: _i, ...f }) => f) } };
-    actualizar(limpio);
-    dibujarStoryboard(limpio);
-  }
-
-  function actualizar(p: Proyecto) {
-    const list = historial.map((x) => (x.id === p.id ? p : x));
-    setHistorial(list);
-    saveProyectos(list);
-    setProyecto(p);
-  }
-
-  function borrar(id: string) {
-    const list = historial.filter((p) => p.id !== id);
-    setHistorial(list);
-    saveProyectos(list);
-    if (proyecto?.id === id) setProyecto(null);
-  }
-
-  function nuevo() {
-    setProyecto(null);
-    setError("");
-    setCreando(true);
-  }
-
+export default function Landing() {
   return (
-    <main>
-      <header className="top no-print">
-        <button type="button" className="brand" onClick={() => { setProyecto(null); setCreando(false); }} disabled={cargando} aria-label="Ir a mis proyectos">
-          <div className="brand-mark">T1</div>
-          <div>
-            <h1>
-              Toma <span>uno</span>
-            </h1>
-            <p>Estudio de preproducción</p>
-          </div>
-        </button>
-        <div className="top-right">
-          {vista === "proyecto" && (
-            <button type="button" className="primary top-new" onClick={nuevo}>＋ Nuevo</button>
-          )}
-          <ThemeToggle />
-        </div>
+    <div className="ld">
+      <header className="ld-nav">
+        <Link href="/" className="ld-brand">
+          <span className="ld-mark">T1</span>
+          Toma <em>uno</em>
+        </Link>
+        <nav>
+          <a href="#como">Cómo funciona</a>
+          <a href="#entrega">Qué entrega</a>
+          <a href="#planes">Planes</a>
+        </nav>
+        <Link href="/estudio" className="ld-btn ghost">Entrar al estudio</Link>
       </header>
 
-      {vista === "tablero" && listo && <Tablero proyectos={historial} onAbrir={(p) => { setProyecto(p); setTab("resumen"); }} onNuevo={nuevo} onBorrar={borrar} />}
-
-      {vista === "nuevo" && (
-        <NuevoProyecto
-          brief={brief}
-          setBrief={setBrief}
-          leyendo={leyendo}
-          error={error}
-          onSubir={subirBrief}
-          onQuitarBrief={quitarBrief}
-          onGenerar={generar}
-          onCancelar={() => setCreando(false)}
-          pasoInicial={error ? 2 : 0}
-        />
-      )}
-
-      {vista === "generando" && <SalaControl texto={texto} segundos={Math.max(0, Math.round((ahora - inicio) / 1000))} brief={brief} />}
-
-      {vista === "proyecto" && proyecto && (
-        <section className="result">
-          <ProyectoHead proyecto={proyecto} onVolver={() => setProyecto(null)} onChange={actualizar} />
-          {dibujando && (
-            <div className="card progress st-drawing no-print">
-              <div className="progress-head">
-                <b>Dibujando el storyboard · {dibujando.hechos} de {dibujando.total} grupos</b>
-                <span className="mono">{Math.round(((dibujando.hechos + 0.3) / dibujando.total) * 100)}%</span>
-              </div>
-              <div className="bar"><div style={{ width: `${Math.round(((dibujando.hechos + 0.3) / dibujando.total) * 100)}%` }} /></div>
-              <p className="muted">El guion ya está listo; cada dibujo aparece en cuanto se termina.</p>
-            </div>
-          )}
-          {avisoDibujo && <p className="error no-print">{avisoDibujo}</p>}
-          <Resultado proyecto={proyecto} tab={tab} setTab={setTab} demo={demo} onChange={actualizar} dibujando={dibujando} onRedibujar={redibujar} />
-        </section>
-      )}
-    </main>
-  );
-}
-
-function ProyectoHead({ proyecto, onVolver, onChange }: { proyecto: Proyecto; onVolver: () => void; onChange: (p: Proyecto) => void }) {
-  const p = proyecto.paquete;
-  const b = proyecto.brief;
-  const [n, setN] = useState<number | null>(null);
-  useEffect(() => {
-    setN(diasPara(b.fechaRodaje));
-  }, [b.fechaRodaje]);
-  const portada = p.storyboard.find((f) => f.imagen || f.svg);
-  return (
-    <section className="st-phead">
-      <div className="st-phead-copy">
-        <button type="button" className="st-back no-print" onClick={onVolver}>← Proyectos</button>
-        <div className="st-phead-when">
-          <span className="kicker">{b.fechaRodaje ? `Rodaje ${fechaCorta(b.fechaRodaje)} · ${cuentaTexto(n, p.planRodaje.length || b.diasRodaje)}` : "Preproducción · sin fecha"}</span>
-          <label className="lb-field no-print">
-            <span>Primer día de rodaje</span>
-            <input
-              type="date"
-              value={b.fechaRodaje ?? ""}
-              onChange={(e) => onChange({ ...proyecto, brief: { ...b, fechaRodaje: e.target.value }, paquete: moverFechas(p, b.fechaRodaje, e.target.value) })}
-            />
-          </label>
+      <section className="ld-hero">
+        <div className="ld-hero-copy">
+          <span className="ld-rec"><i /> Estudio de preproducción</span>
+          <h1>
+            Del brief
+            <br />a la <span>claqueta</span>.
+          </h1>
+          <p>
+            Sube el brief y en minutos tienes guion audiovisual, storyboard dibujado, guion técnico con ópticas y plan de rodaje con fecha real.
+            Escrito con criterio de cine, no de plantilla.
+          </p>
+          <div className="ld-ctas">
+            <Link href="/estudio" className="ld-btn">Empieza un proyecto</Link>
+            <a href="#planes" className="ld-btn ghost">Ver planes</a>
+          </div>
+          <ul className="ld-proof">
+            <li><b>8</b> entregables por proyecto</li>
+            <li><b>1</b> link por persona del equipo</li>
+            <li><b>0</b> plantillas genéricas</li>
+          </ul>
         </div>
-        <h2>{p.resumen.titulo}</h2>
-        <p>{p.resumen.logline}</p>
-        <div className="st-phead-chips">
-          <span className="chip" title={p.resumen.duracion || b.duracion}>{p.resumen.duracion || b.duracion}</span>
-          <span className="chip" title={p.resumen.formato || b.formato}>{p.resumen.formato || b.formato}</span>
-          <span className="chip">{p.guionAudiovisual.length} escenas</span>
-          <span className="chip">{p.guionTecnico.length} tomas</span>
-          <span className="chip">{p.planRodaje.length} {p.planRodaje.length === 1 ? "día" : "días"}</span>
-          {b.incluirDron && <span className="chip accent">✈ Dron</span>}
-        </div>
-      </div>
-      {portada && (
-        <div className="vf st-phead-cover no-print">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={portada.imagen || svgSrc(portada.svg!)} alt="" />
-          <span className="vf-tag">{portada.planoId}</span>
-        </div>
-      )}
-    </section>
-  );
-}
 
-function Resultado({ proyecto, tab, setTab, demo, onChange, dibujando, onRedibujar }: { proyecto: Proyecto; tab: Tab; setTab: (t: Tab) => void; demo: boolean; onChange: (p: Proyecto) => void; dibujando: { hechos: number; total: number } | null; onRedibujar: (p: Proyecto) => void }) {
-  const p = proyecto.paquete;
-  const [compartiendo, setCompartiendo] = useState(false);
-  const [shareMsg, setShareMsg] = useState("");
-  const shareUrl = proyecto.share && typeof window !== "undefined" ? `${window.location.origin}/r/${proyecto.share.id}` : "";
-
-  async function compartir() {
-    setCompartiendo(true);
-    setShareMsg("");
-    try {
-      const res = await fetch("/api/share", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paquete: p, id: proyecto.share?.id, ownerToken: proyecto.share?.ownerToken, fechaRodaje: proyecto.brief.fechaRodaje }),
-      });
-      const j = await res.json();
-      if (!res.ok) throw new Error(j.error || `Error ${res.status}`);
-      onChange({ ...proyecto, share: { id: j.id, ownerToken: j.ownerToken } });
-      const url = `${window.location.origin}${j.url}`;
-      await navigator.clipboard?.writeText(url).catch(() => {});
-      setShareMsg(proyecto.share ? "Link actualizado y copiado." : "Link creado y copiado.");
-    } catch (err) {
-      setShareMsg(err instanceof Error ? err.message : String(err));
-    } finally {
-      setCompartiendo(false);
-    }
-  }
-  const nombre = slug(p.resumen.titulo);
-  const [edit, setEdit] = useState(false);
-  const cuenta: Partial<Record<Tab, number>> = { audiovisual: p.guionAudiovisual.length, tecnico: p.guionTecnico.length, storyboard: p.storyboard.length, rodaje: p.planRodaje.length, locaciones: p.locaciones.length };
-
-  return (
-    <>
-      {demo && <p className="banner no-print">Modo demo: agrega ANTHROPIC_API_KEY en .env.local para generar con IA.</p>}
-      <div className={`lb-layout${edit ? " editing" : ""}`}>
-        <aside className="lb-rail no-print">
-          <nav>
-            {GRUPOS.map(([grupo, tabs]) => (
-              <div key={grupo} className="lb-rail-group">
-                <span className="lb-rail-title">{grupo}</span>
-                {tabs.map((k) => (
-                  <button key={k} type="button" className={tab === k ? "on" : ""} onClick={() => setTab(k)}>
-                    <span className="lb-ico" aria-hidden>{ICONOS[k]}</span>
-                    {ETIQUETA[k]}
-                    {cuenta[k] !== undefined && <small>{cuenta[k]}</small>}
-                  </button>
-                ))}
-              </div>
+        <div className="ld-window" aria-label="Vista del estudio">
+          <div className="ld-window-bar">
+            <span /><span /><span />
+            <b>Storyboard · Escena 01</b>
+            <em className="ld-tc">REC 00:00:12:08</em>
+          </div>
+          <div className="ld-frames">
+            {CUADROS.map((c, i) => (
+              <figure key={c.id} style={{ animationDelay: `${0.15 * i}s` }}>
+                <div className="ld-frame">
+                  {c.svg}
+                  <span className="ld-frame-id">{c.id}</span>
+                </div>
+                <figcaption>
+                  <b>{c.plano}</b>
+                  <span>{c.lente}</span>
+                </figcaption>
+              </figure>
             ))}
-          </nav>
-          <div className="lb-rail-tools">
-            <button type="button" className={edit ? "lb-edit on" : "lb-edit"} onClick={() => setEdit(!edit)} aria-pressed={edit}>
-              {edit ? "✓ Listo" : "✎ Editar textos"}
-            </button>
-            <div className="lb-export">
-              <span className="lb-rail-title">Exportar</span>
-              <button onClick={() => window.print()}>PDF</button>
-              <button onClick={() => download(`${nombre}.md`, toMarkdown(proyecto), "text/markdown")}>Markdown</button>
-              <button onClick={() => download(`${nombre}.json`, JSON.stringify(proyecto, null, 2), "application/json")}>JSON</button>
-            </div>
           </div>
-        </aside>
-        <div className="lb-main">
-          {edit && <p className="lb-editbar no-print">Modo edición: toca cualquier texto del guion, las tomas o el plan para corregirlo. Se guarda solo.</p>}
-          <Libro proyecto={proyecto} tab={tab} edit={edit} onChange={onChange} irA={(t) => setTab(t as Tab)} dibujando={dibujando} onRedibujar={onRedibujar} />
-          <section className={tab === "compartir" ? "sec lb-sec" : "sec lb-sec hide no-print"}>
-            <header className="lb-sec-head">
-              <div>
-                <span className="lb-kicker">Cliente y equipo</span>
-                <h2>Compartir</h2>
-              </div>
-            </header>
-            <div className="links-grid">
-              <div className="share card">
-                <div className="share-main">
-                  <div className="share-icon">🎬</div>
-                  <div>
-                    <b>Link para el cliente</b>
-                    <p>Solo muestra el guion audiovisual y el storyboard, con opción de comentar y aprobar.</p>
-                    {shareUrl && (
-                      <p className="share-url">
-                        <a href={shareUrl} target="_blank" rel="noreferrer">{shareUrl}</a>
-                      </p>
-                    )}
-                    {shareMsg && <p className="muted">{shareMsg}</p>}
-                  </div>
-                </div>
-                <div className="share-actions">
-                  <button className="primary" onClick={compartir} disabled={compartiendo}>
-                    {compartiendo ? "Guardando…" : proyecto.share ? "Actualizar link" : "🔗 Compartir con cliente"}
-                  </button>
-                  {shareUrl && <button onClick={() => navigator.clipboard?.writeText(shareUrl)}>Copiar</button>}
-                  {shareUrl && <a className="btn" href={shareUrl} target="_blank" rel="noreferrer">Ver comentarios</a>}
-                </div>
-              </div>
-              <LinksEquipo proyecto={proyecto} onChange={onChange} />
-            </div>
-          </section>
-        </div>
-      </div>
-    </>
-  );
-}
-
-// Un link por persona del equipo; mismo registro, cada quien ve solo lo suyo.
-function LinksEquipo({ proyecto, onChange }: { proyecto: Proyecto; onChange: (p: Proyecto) => void }) {
-  const equipo = equipoDe(proyecto.brief);
-  const [abierto, setAbierto] = useState(false);
-  const [guardando, setGuardando] = useState(false);
-  const [msg, setMsg] = useState("");
-  const base = proyecto.equipoShare && typeof window !== "undefined" ? `${window.location.origin}/e/${proyecto.equipoShare.id}` : "";
-  const editar = (id: string, k: "nombre" | "contacto" | "equipo" | "camara", v: string) =>
-    onChange({ ...proyecto, brief: { ...proyecto.brief, equipoRodaje: equipo.map((o) => (o.id === id ? { ...o, [k]: v } : o)) } });
-
-  async function guardar() {
-    setGuardando(true);
-    setMsg("");
-    try {
-      const res = await fetch("/api/equipo", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paquete: proyecto.paquete, equipo, id: proyecto.equipoShare?.id, ownerToken: proyecto.equipoShare?.ownerToken, fechaRodaje: proyecto.brief.fechaRodaje }),
-      });
-      const j = await res.json();
-      if (!res.ok) throw new Error(j.error || `Error ${res.status}`);
-      onChange({ ...proyecto, equipoShare: { id: j.id, ownerToken: j.ownerToken } });
-      setAbierto(true);
-      setMsg(proyecto.equipoShare ? "Links actualizados: cada quien verá los cambios con el mismo link." : "Links listos.");
-    } catch (err) {
-      setMsg(err instanceof Error ? err.message : String(err));
-    } finally {
-      setGuardando(false);
-    }
-  }
-
-  const texto = (o: Operador, url: string) =>
-    `Hola${o.nombre ? ` ${o.nombre.split(" ")[0]}` : ""}, esta es tu hoja de llamado (${o.rol}) para "${proyecto.paquete.resumen.titulo}": ${url}`;
-  const wa = (o: Operador, url: string) => {
-    const tel = o.contacto.replace(/\D/g, "");
-    return `https://wa.me/${tel.length >= 8 ? tel : ""}?text=${encodeURIComponent(texto(o, url))}`;
-  };
-
-  return (
-    <div className="share card crew-links">
-      <div className="crew-links-head">
-        <div className="share-main">
-          <div className="share-icon">🎥</div>
-          <div>
-            <b>Links del equipo</b>
-            <p>Hoja de llamado por persona. El director ve todo (sin presupuesto); cada cámara y el piloto, solo sus tomas, horario y equipo.</p>
+          <div className="ld-track">
+            {[18, 26, 30, 26].map((w, i) => (
+              <span key={i} style={{ flexGrow: w }}>
+                <b>{String(i + 1).padStart(2, "0")}</b>
+              </span>
+            ))}
+            <i className="ld-playhead" />
           </div>
         </div>
-        <div className="share-actions">
-          <button className="primary" onClick={guardar} disabled={guardando}>
-            {guardando ? "Guardando…" : proyecto.equipoShare ? "Actualizar links" : "👥 Crear links del equipo"}
-          </button>
-          <button onClick={() => setAbierto(!abierto)}>{abierto ? "Ocultar" : base ? "Ver links" : "Editar equipo"}</button>
+      </section>
+
+      <section className="ld-for">
+        <span>Para</span>
+        <b>Directores</b>
+        <b>Fotógrafos</b>
+        <b>Casas productoras</b>
+        <b>Agencias</b>
+        <b>Pilotos de dron</b>
+      </section>
+
+      <section id="como" className="ld-sec">
+        <header>
+          <span className="ld-kicker">Cómo funciona</span>
+          <h2>Tres pasos y estás listo para el llamado.</h2>
+        </header>
+        <ol className="ld-steps">
+          {PASOS.map(([n, t, d]) => (
+            <li key={n}>
+              <span>{n}</span>
+              <h3>{t}</h3>
+              <p>{d}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section id="entrega" className="ld-sec">
+        <header>
+          <span className="ld-kicker">Qué entrega</span>
+          <h2>Todo el paquete de preproducción, conectado.</h2>
+          <p>Si cambias una escena, la toma, el cuadro y la jornada lo saben.</p>
+        </header>
+        <div className="ld-grid">
+          {ENTREGA.map(([ico, t, d]) => (
+            <article key={t}>
+              <span className="ld-ico">{ico}</span>
+              <h3>{t}</h3>
+              <p>{d}</p>
+            </article>
+          ))}
         </div>
-      </div>
-      {msg && <p className="muted">{msg}</p>}
-      {abierto && (
-        <ul className="crew-list">
-          {equipo.map((o) => {
-            const url = base ? `${base}/${o.id}` : "";
-            const n = tomasDe(o, proyecto.paquete.guionTecnico, equipo).length;
-            return (
-              <li key={o.id}>
-                <div className="crew-who">
-                  <b>{o.rol}</b> <small>{o.tipo === "director" ? "todo el proyecto" : `${n} ${n === 1 ? "toma" : "tomas"}`}</small>
-                  <div className="crew-row">
-                    <input placeholder="Nombre" value={o.nombre} onChange={(e) => editar(o.id, "nombre", e.target.value)} />
-                    <input placeholder="Teléfono" inputMode="tel" value={o.contacto} onChange={(e) => editar(o.id, "contacto", e.target.value)} />
-                    {o.tipo !== "director" && (
-                      <div className="crew-gear crew-gear-pair">
-                        <SelectorCamara o={o} onChange={(v) => editar(o.id, "camara", v)} />
-                        <input placeholder={o.tipo === "dron" ? "Extras (opcional)" : "Lentes (opcional)"} value={o.equipo ?? ""} onChange={(e) => editar(o.id, "equipo", e.target.value)} />
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {url && (
-                  <div className="share-actions">
-                    <a className="btn" href={url} target="_blank" rel="noreferrer">Abrir</a>
-                    <button onClick={() => navigator.clipboard?.writeText(url)}>Copiar</button>
-                    <a className="btn" href={wa(o, url)} target="_blank" rel="noreferrer">WhatsApp</a>
-                  </div>
-                )}
-              </li>
-            );
-          })}
+      </section>
+
+      <section className="ld-sec ld-split">
+        <div>
+          <span className="ld-kicker">Un link para cada quien</span>
+          <h2>Cada persona ve solo lo que le toca.</h2>
+          <p>El cliente aprueba el guion y el storyboard. El fotógrafo abre su hoja con sus tomas, lentes y horario. El piloto, sus vuelos con altura y normativa.</p>
+        </div>
+        <ul className="ld-roles">
+          <li><i className="c1" /><b>Cliente</b><span>Guion + storyboard · comenta y aprueba</span></li>
+          <li><i className="c2" /><b>Director</b><span>Todo el proyecto, sin presupuesto</span></li>
+          <li><i className="c3" /><b>Cámara A</b><span>12 tomas · 24-70 mm · llamado 06:00</span></li>
+          <li><i className="c4" /><b>Piloto de dron</b><span>4 vuelos · 60 m AGL · ND 16</span></li>
         </ul>
-      )}
+      </section>
+
+      <section className="ld-sec ld-split rev">
+        <div>
+          <span className="ld-kicker">Criterio de director</span>
+          <h2>Piensa en lentes, luz y ritmo.</h2>
+          <p>Cada proyecto se escribe con un manual de dirección: lenguaje de cámara, escuelas de fotografía, hora dorada, voz en off que no describe lo que ya se ve y ritmo de edición según el formato.</p>
+        </div>
+        <div className="ld-quote">
+          <span className="ld-lab">Toma 2A · Plano medio</span>
+          <p>“Push-in lento de 35 a 50 mm mientras ella entiende la palabra. La luz entra por la ventana a la izquierda; el corte llega con la mirada.”</p>
+        </div>
+      </section>
+
+      <section id="planes" className="ld-sec">
+        <header>
+          <span className="ld-kicker">Planes</span>
+          <h2>Paga por proyecto o suscríbete.</h2>
+          <p>Precios en pesos mexicanos. Cobramos por tomas porque es lo que mide el tamaño real de un proyecto.</p>
+        </header>
+        <div className="ld-plans">
+          <input type="radio" name="plan" id="p-proyecto" defaultChecked />
+          <input type="radio" name="plan" id="p-mes" />
+          <div className="ld-toggle">
+            <label htmlFor="p-proyecto">Por proyecto</label>
+            <label htmlFor="p-mes">Mensual</label>
+          </div>
+          <div className="ld-cards proyecto">
+            {POR_PROYECTO.map((p) => (
+              <article key={p.n} className={p.top ? "destacado" : ""}>
+                {p.top && <span className="ld-badge">El más usado</span>}
+                <h3>{p.n}</h3>
+                <p className="ld-tope">{p.tope}</p>
+                <p className="ld-price"><small>$</small>{p.precio}<small> MXN</small></p>
+                <ul>
+                  <li>Los 8 entregables</li>
+                  <li>Storyboard dibujado + 2 redibujos</li>
+                  <li>Links de cliente y equipo</li>
+                </ul>
+                <Link href="/estudio" className={p.top ? "ld-btn" : "ld-btn ghost"}>Crear proyecto</Link>
+              </article>
+            ))}
+          </div>
+          <div className="ld-cards mes">
+            {MENSUAL.map((p) => (
+              <article key={p.n} className={p.top ? "destacado" : ""}>
+                {p.top && <span className="ld-badge">Recomendado</span>}
+                <h3>{p.n}</h3>
+                <p className="ld-tope">{p.tope}</p>
+                <p className="ld-price"><small>$</small>{p.precio}<small> MXN / mes</small></p>
+                <ul>
+                  <li>{p.extra}</li>
+                  <li>Redibujos ilimitados dentro de tu bolsa</li>
+                  <li>Paquete extra de 25 tomas: $149</li>
+                </ul>
+                <Link href="/estudio" className={p.top ? "ld-btn" : "ld-btn ghost"}>Empezar</Link>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="ld-sec ld-faq">
+        <header>
+          <span className="ld-kicker">Preguntas</span>
+          <h2>Lo que nos preguntan en set.</h2>
+        </header>
+        {PREGUNTAS.map(([q, a]) => (
+          <details key={q}>
+            <summary>{q}</summary>
+            <p>{a}</p>
+          </details>
+        ))}
+      </section>
+
+      <section className="ld-final">
+        <span className="ld-rec"><i /> Listos</span>
+        <h2>Tu próximo rodaje empieza aquí.</h2>
+        <Link href="/estudio" className="ld-btn">Empieza un proyecto</Link>
+      </section>
+
+      <footer className="ld-foot">
+        <span className="ld-brand small"><span className="ld-mark">T1</span> Toma <em>uno</em></span>
+        <span>Estudio de preproducción · Hecho en México</span>
+      </footer>
     </div>
   );
 }

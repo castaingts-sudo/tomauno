@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Toma uno · Preproducción de video",
     short_name: "Toma uno",
     description: "De la idea al guion, storyboard y plan de rodaje.",
-    start_url: "/",
+    start_url: "/estudio",
     display: "standalone",
     background_color: "#0f1115",
     theme_color: "#0f1115",
