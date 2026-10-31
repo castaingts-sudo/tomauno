@@ -10,6 +10,9 @@ interface Estado { token: string; plan: string; mensual: boolean; tomas: number;
 export function Acceso() {
   const [cobro, setCobro] = useState(false);
   const [admin, setAdmin] = useState(false);
+  const [correo, setCorreo] = useState("");
+  const [enviado, setEnviado] = useState(false);
+  const [mandando, setMandando] = useState(false);
   const [acc, setAcc] = useState<Estado | null>(null);
   const [abierto, setAbierto] = useState(false);
   const [aviso, setAviso] = useState("");
@@ -27,6 +30,18 @@ export function Acceso() {
     (async () => {
       const url = new URL(window.location.href);
       const pago = url.searchParams.get("pago");
+      const entrada = url.searchParams.get("entrar");
+      if (entrada) {
+        url.searchParams.delete("entrar");
+        window.history.replaceState(null, "", url.pathname + url.search);
+        const r = await fetch(`/api/entrar?id=${encodeURIComponent(entrada)}`);
+        const j = await r.json().catch(() => ({}));
+        if (r.ok && j.token) {
+          guardarToken(j.token);
+          setAviso(`Entraste como ${j.email}. Tus proyectos se están cargando.`);
+        } else setAviso(j.error || "No se pudo entrar con ese link.");
+        setAbierto(true);
+      }
       if (pago) {
         url.searchParams.delete("pago");
         window.history.replaceState(null, "", url.pathname + url.search);
@@ -52,6 +67,17 @@ export function Acceso() {
       else if (t) guardarToken("");
     })();
   }, []);
+
+  async function pedirLink(ev: React.FormEvent) {
+    ev.preventDefault();
+    setError("");
+    setMandando(true);
+    const r = await fetch("/api/entrar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: correo.trim() }) });
+    const j = await r.json().catch(() => ({}));
+    setMandando(false);
+    if (r.ok) setEnviado(true);
+    else setError(j.error || "No se pudo enviar el link.");
+  }
 
   async function entrar(ev: React.FormEvent) {
     ev.preventDefault();
@@ -96,6 +122,15 @@ export function Acceso() {
               <b className="acc-plan">Elige un plan para generar</b>
               <p className="acc-dato">Pagas por proyecto o por mes, según las tomas que necesites.</p>
               <Link className="btn primary" href="/#planes">Ver planes</Link>
+              <span className="lb-lab acc-sep">¿Ya pagaste?</span>
+              {enviado ? (
+                <p className="acc-aviso">Si {correo} tiene un plan, te llegó un link para entrar. Revisa también spam.</p>
+              ) : (
+                <form onSubmit={pedirLink} className="acc-form">
+                  <input type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} placeholder="Tu correo de compra" aria-label="Correo" required />
+                  <button type="submit" disabled={mandando}>{mandando ? "…" : "Enviar link"}</button>
+                </form>
+              )}
             </>
           )}
           <form onSubmit={entrar} className="acc-form">

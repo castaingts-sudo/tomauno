@@ -14,8 +14,10 @@ const ID_RE = /^[A-Za-z0-9-]{8,64}$/;
 async function dueno(req: Request): Promise<string | null> {
   if (esAdmin(req)) return "admin";
   const token = req.headers.get("x-toma-acceso") || "";
-  if (!token || !(await leerAcceso(token))) return null;
-  return createHash("sha256").update(token).digest("hex").slice(0, 32);
+  const a = token ? await leerAcceso(token) : null;
+  if (!a) return null;
+  // Todas las compras con el mismo correo comparten proyectos.
+  return createHash("sha256").update(a.email?.trim().toLowerCase() || token).digest("hex").slice(0, 32);
 }
 
 function falla(err: unknown) {

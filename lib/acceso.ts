@@ -2,6 +2,7 @@ import { randomBytes, timingSafeEqual } from "node:crypto";
 import { COSTO_DIBUJO_MXN, COSTO_PROYECTO_MXN, planDe } from "./planes";
 import { hayStripe } from "./stripe";
 import { listJson, readJson, writeJson } from "./store";
+import { enviarCorreo, plantilla, SITIO } from "./correo";
 
 // Acceso pagado al estudio: cada compra da un token con tomas; los proyectos las descuentan.
 // El cobro solo se exige cuando Stripe está configurado; el administrador entra con TOMA_ADMIN_CODE.
@@ -57,6 +58,14 @@ export async function permiso(req: Request, minimo = 1): Promise<Permiso | Respo
   return { libre: false, admin: false, acceso: a };
 }
 
+// De varias compras con el mismo correo, la activa con más tomas; luego la más reciente.
+export function cuentaDe(accesos: Acceso[], email: string): Acceso | null {
+  const e = email.trim().toLowerCase();
+  const suyas = accesos.filter((a) => a.email?.toLowerCase() === e);
+  suyas.sort((a, b) => Number(b.activo) - Number(a.activo) || restantes(b) - restantes(a) || b.creado.localeCompare(a.creado));
+  return suyas[0] || null;
+}
+
 // Registra el uso y, si hay acceso pagado, descuenta tomas (los dibujos no descuentan).
 export async function registrarUso(p: Permiso, tipo: Uso["tipo"], cantidad: number, titulo?: string) {
   const costo = tipo === "proyecto" ? COSTO_PROYECTO_MXN : cantidad * COSTO_DIBUJO_MXN;
@@ -95,6 +104,7 @@ export async function activarSesion(s: {
   const pago: Pago = { fecha: new Date().toISOString(), centavos: s.amount_total, concepto: plan.nombre, ref: s.id };
 
   let a: Acceso | null = null;
+  let nueva = false;
   if (plan.tipo === "extra" && s.metadata.token) a = await leerAcceso(s.metadata.token);
   if (a) {
     a.tomas += plan.tomas;
@@ -115,9 +125,22 @@ export async function activarSesion(s: {
       stripe: { customer: s.customer || undefined, subscription: s.subscription || undefined, sessions: [s.id] },
       pagos: [pago],
     };
+    nueva = true;
     if (s.subscription) await writeJson(`suscripciones/${s.subscription}.json`, { token: a.token });
   }
   await guardarAcceso(a);
   await writeJson(`sesiones/${s.id}.json`, { token: a.token });
+  if (nueva && a.email) {
+    await enviarCorreo(
+      a.email,
+      `Bienvenido a Toma uno · ${plan.nombre}`,
+      plantilla(
+        "Tu estudio está listo",
+        `Tienes <b style="color:#ece7dc">${plan.tomas} tomas</b> en el plan ${plan.nombre}. Para entrar desde cualquier dispositivo, usa <b style="color:#ece7dc">Entrar con tu correo</b> con esta misma dirección.`,
+        { texto: "Abrir el estudio", url: `${SITIO()}/estudio` },
+        `Tu código de acceso, por si lo necesitas: <span style="font-family:monospace;color:#9a958b">${a.token}</span>`,
+      ),
+    ).catch(() => false);
+  }
   return a;
 }

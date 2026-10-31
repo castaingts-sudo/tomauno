@@ -905,3 +905,4 @@ div.ed { display: block; }
 .ad-lista li em { font-style: normal; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 800px) { .ad-dos { grid-template-columns: 1fr; } .ad-lista li { grid-template-columns: 1fr auto; } .ad-lista li em { grid-column: 1 / -1; } }
 .ad-lista li.ad-vacio { display: block; }
+.acc-sep { margin: 8px 0 0; }
