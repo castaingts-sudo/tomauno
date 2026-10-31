@@ -318,7 +318,7 @@ export default function Home() {
   return (
     <main>
       <header className="top no-print">
-        <button type="button" className="brand" onClick={() => { setProyecto(null); setCreando(false); }} disabled={cargando} aria-label="Ir a mis proyectos">
+        <button type="button" className="brand" onClick={() => { if (vista === "tablero") window.location.href = "/"; else { setProyecto(null); setCreando(false); } }} disabled={cargando} aria-label={vista === "tablero" ? "Ir al inicio" : "Ir a mis proyectos"} title={vista === "tablero" ? "Ir al inicio" : "Mis proyectos"}>
           <div className="brand-mark">T1</div>
           <div>
             <h1>
