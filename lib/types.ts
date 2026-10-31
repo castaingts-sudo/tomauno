@@ -9,6 +9,7 @@ export interface Brief {
   incluirDron: boolean;
   fechaRodaje?: string; // AAAA-MM-DD del primer día
   diasRodaje?: number;
+  lugar?: string; // ciudad o locación principal (para el clima y la luz)
   notas: string;
   equipoRodaje?: Operador[]; // quién filma: director, cámaras, piloto de dron
   archivo?: string; // nombre del brief subido

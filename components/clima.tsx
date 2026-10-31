@@ -20,6 +20,7 @@ const LUGARES = [
 ];
 
 export function adivinarLugar(pr: Proyecto): string {
+  if (pr.brief.lugar?.trim()) return pr.brief.lugar.trim();
   const p = pr.paquete;
   const textos = [
     ...p.locaciones.map((l) => `${l.nombre} ${l.descripcion}`),

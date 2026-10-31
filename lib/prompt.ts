@@ -48,6 +48,7 @@ Estilo visual: ${b.estilo || "a definir"}
 Presupuesto: ${b.presupuesto || "medio"}
 Incluir tomas con dron: ${b.incluirDron ? "sí" : "no"}
 Fecha de rodaje: ${fechaLarga(b.fechaRodaje) ? `${fechaLarga(b.fechaRodaje)}${b.diasRodaje && b.diasRodaje > 1 ? `, ${b.diasRodaje} días seguidos` : ""}` : "a definir"}
+Lugar de rodaje: ${b.lugar || "a definir"}
 Notas adicionales: ${b.notas || "ninguna"}
 Equipo de rodaje:
 ${equipoDe(b)
@@ -69,7 +70,7 @@ ${previo ?? ""}
 Ahora escribe SOLO un objeto JSON con las claves "planRodaje", "equipo", "crew", "locaciones", "presupuesto", "postproduccion" y "checklist" (en ese orden, con la forma indicada), totalmente coherente con esa primera parte: usa sus ids de plano, sus escenas, locaciones y operadores. Todos los planos deben aparecer en el plan de rodaje.`;
 }
 
-export const EXTRACT_PROMPT = `Lee el brief audiovisual adjunto y llena los campos del formulario de preproducción en español. "idea" es un resumen claro de 2 a 4 frases del video que se quiere lograr (concepto, cliente, público). "duracion", "formato", "estilo" y "presupuesto" salen del brief; si no se mencionan, deja una cadena vacía (presupuesto: "bajo", "medio" o "alto" si se puede inferir, si no "medio"). "fechaRodaje" es la fecha del primer día de grabación en formato AAAA-MM-DD si el brief la menciona (cadena vacía si no); "diasRodaje" es cuántos días de grabación (0 si no se sabe). "incluirDron" es true si el brief menciona dron o tomas aéreas. "camaras" es cuántos operadores de cámara (sin contar el dron) pide o implica el brief; 0 si no se puede saber. "notas" resume datos prácticos: cliente, idiomas y subtítulos, talento, locaciones, días de rodaje y entregables.`;
+export const EXTRACT_PROMPT = `Lee el brief audiovisual adjunto y llena los campos del formulario de preproducción en español. "idea" es un resumen claro de 2 a 4 frases del video que se quiere lograr (concepto, cliente, público). "duracion", "formato", "estilo" y "presupuesto" salen del brief; si no se mencionan, deja una cadena vacía (presupuesto: "bajo", "medio" o "alto" si se puede inferir, si no "medio"). "fechaRodaje" es la fecha del primer día de grabación en formato AAAA-MM-DD si el brief la menciona (cadena vacía si no); "diasRodaje" es cuántos días de grabación (0 si no se sabe). "incluirDron" es true si el brief menciona dron o tomas aéreas. "camaras" es cuántos operadores de cámara (sin contar el dron) pide o implica el brief; 0 si no se puede saber. "lugar" es la ciudad o locación principal del rodaje con su estado, p. ej. "Aguascalientes, Ags." (cadena vacía si no se menciona). "notas" resume datos prácticos: cliente, idiomas y subtítulos, talento, locaciones, días de rodaje y entregables.`;
 
 export const BRIEF_FIELDS_SCHEMA = {
   type: "object",
@@ -83,9 +84,10 @@ export const BRIEF_FIELDS_SCHEMA = {
     camaras: { type: "integer" },
     fechaRodaje: { type: "string" },
     diasRodaje: { type: "integer" },
+    lugar: { type: "string" },
     notas: { type: "string" },
   },
-  required: ["idea", "duracion", "formato", "estilo", "presupuesto", "incluirDron", "camaras", "fechaRodaje", "diasRodaje", "notas"],
+  required: ["idea", "duracion", "formato", "estilo", "presupuesto", "incluirDron", "camaras", "fechaRodaje", "diasRodaje", "lugar", "notas"],
   additionalProperties: false,
 };
 

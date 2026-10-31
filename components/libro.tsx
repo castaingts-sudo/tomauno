@@ -46,6 +46,9 @@ export function segundos(d = ""): number {
 const tc = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.round(s % 60)).padStart(2, "0")}`;
 const sinTc = (d = "") => d.replace(/\s*\(.*\)\s*$/, "");
 
+// "$188,650 MXN (estimado orientativo)" → "$188,650".
+const montoCorto = (s = "") => s.match(/\$\s?[\d.,]+/)?.[0].replace(/\s/g, "") || s;
+
 // "$12,500 MXN" → 12500.
 const monto = (s = "") => Number(s.replace(/[^\d.]/g, "")) || 0;
 
@@ -318,7 +321,7 @@ export function Libro({ proyecto, tab, edit, onChange, irA, dibujando, onRedibuj
                   <span>{f ? DIA(f).toLocaleDateString("es-MX", { weekday: "short" }) : "s/f"}</span>
                 </div>
                 <div className="lb-day-info">
-                  <span className="lb-kicker">Jornada {j.dia}{f ? ` · ${DIA(f).toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}` : j.fecha ? ` · ${j.fecha}` : ""}</span>
+                  <span className="lb-kicker">Jornada {j.dia}{f ? ` · ${DIA(f).toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}` : j.fecha ? ` · ${j.fecha.length > 32 ? j.fecha.split(/[.,;]/)[0].slice(0, 32) : j.fecha}` : ""}</span>
                   <Ed v={j.locacion} on={(t) => jornada(j.dia, { locacion: t })} edit={edit} className="lb-day-loc" block />
                   <div className="lb-day-meta">
                     <label className="lb-field no-print">
@@ -508,7 +511,7 @@ function Resumen({ p, b, tiempos, total, irA, tab, edit, set }: { p: Paquete; b:
     ["Escenas", String(p.guionAudiovisual.length), `${p.guionTecnico.length} tomas`, "audiovisual"],
     ["Tomas aéreas", String(aereas), aereas ? "con dron" : "sin dron", "tecnico"],
     ["Rodaje", `${p.planRodaje.length} ${p.planRodaje.length === 1 ? "día" : "días"}`, `${p.locaciones.length} locaciones`, "rodaje"],
-    ["Presupuesto", p.presupuesto.total, p.presupuesto.moneda, "presupuesto"],
+    ["Presupuesto", montoCorto(p.presupuesto.total), p.presupuesto.moneda, "presupuesto"],
   ];
   return (
     <Sec id="resumen" tab={tab} kicker="Visión general" titulo="Resumen">

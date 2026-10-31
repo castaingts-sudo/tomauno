@@ -27,11 +27,6 @@ export function Acceso() {
     (async () => {
       const url = new URL(window.location.href);
       const pago = url.searchParams.get("pago");
-      if (claveAdmin()) {
-        const { j } = await consultar("", claveAdmin());
-        if (j.admin) { setAdmin(true); return; }
-        guardarAdmin("");
-      }
       if (pago) {
         url.searchParams.delete("pago");
         window.history.replaceState(null, "", url.pathname + url.search);
@@ -45,6 +40,11 @@ export function Acceso() {
         }
         setAviso(j.error || "No pudimos confirmar el pago. Si ya pagaste, recarga en un minuto.");
         setAbierto(true);
+      }
+      if (claveAdmin()) {
+        const { j } = await consultar("", claveAdmin());
+        if (j.admin) { setAdmin(true); return; }
+        guardarAdmin("");
       }
       const t = tokenAcceso();
       const { j } = await consultar(t ? `token=${encodeURIComponent(t)}` : "");

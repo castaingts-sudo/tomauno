@@ -177,6 +177,13 @@ function ProximoRodaje({ p, n, onAbrir }: { p: Proyecto; n: number; onAbrir: (p:
   );
 }
 
+// "60 segundos exactos (master). Versiones…" → "60 s".
+function durCorta(d = "") {
+  const m = d.match(/(\d+(?:[.,]\d+)?)\s*(seg|s\b|min|m\b|'')/i);
+  if (m) return `${m[1]} ${/^m/i.test(m[2]) ? "min" : "s"}`;
+  return d.length > 14 ? `${d.slice(0, 14)}…` : d;
+}
+
 function TarjetaProyecto({ p, estado, hoy, onAbrir, onBorrar }: { p: Proyecto; estado: { txt: string; cls: string }; hoy: boolean; onAbrir: () => void; onBorrar: () => void }) {
   const [confirmar, setConfirmar] = useState(false);
   const r = p.paquete.resumen;
@@ -189,7 +196,7 @@ function TarjetaProyecto({ p, estado, hoy, onAbrir, onBorrar }: { p: Proyecto; e
           <span className={`st-pill ${estado.cls}`}>{estado.txt}</span>
           <span className="vf-meta">
             <span>{p.paquete.guionTecnico.length} tomas</span>
-            <span>{r.duracion || p.brief.duracion}</span>
+            <span>{durCorta(r.duracion || p.brief.duracion)}</span>
           </span>
         </div>
         <div className="st-card-body">
@@ -282,6 +289,15 @@ export function NuevoProyecto({
   const set = <K extends keyof Brief>(k: K, v: Brief[K]) => setBrief((b) => ({ ...b, [k]: v }));
   const equipo = equipoDe(brief);
   const listo = brief.idea.trim().length > 0;
+  const [durTocada, setDurTocada] = useState(false);
+
+  // Si la idea dice "spot de 30 segundos" y no han elegido duración, la tomamos de ahí.
+  function cambiarIdea(idea: string) {
+    set("idea", idea);
+    if (durTocada) return;
+    const m = idea.match(/(\d+(?:[.,]\d+)?)\s*(segundos|segs?|s\b|minutos|mins?)/i);
+    if (m) set("duracion", `${m[1].replace(",", ".")} ${/^m/i.test(m[2]) ? "min" : "s"}`);
+  }
 
   function siguiente(e: React.FormEvent) {
     e.preventDefault();
@@ -324,9 +340,9 @@ export function NuevoProyecto({
             )}
             <label className="st-field">
               Idea del video
-              <textarea required rows={5} value={brief.idea} onChange={(e) => set("idea", e.target.value)} placeholder="Ej.: Video promocional de 60 s para un viñedo en Valle de Guadalupe, mostrando la vendimia al amanecer y una cata al atardecer…" />
+              <textarea required rows={5} value={brief.idea} onChange={(e) => cambiarIdea(e.target.value)} placeholder="Ej.: Video promocional de 60 s para un viñedo en Valle de Guadalupe, mostrando la vendimia al amanecer y una cata al atardecer…" />
             </label>
-            <Opciones label="Duración" valor={brief.duracion} opciones={DURACIONES} onChange={(v) => set("duracion", v)} libre />
+            <Opciones label="Duración" valor={brief.duracion} opciones={DURACIONES} onChange={(v) => { setDurTocada(true); set("duracion", v); }} libre />
             <Opciones label="Formato" valor={brief.formato} opciones={FORMATOS} onChange={(v) => set("formato", v)} libre />
             <Opciones label="Estilo visual" valor={brief.estilo} opciones={ESTILOS} onChange={(v) => set("estilo", v)} libre />
             <div className="st-field">
@@ -379,6 +395,10 @@ export function NuevoProyecto({
                 <input type="number" min={1} max={30} value={brief.diasRodaje ?? 1} onChange={(e) => set("diasRodaje", Math.max(1, +e.target.value || 1))} />
               </label>
             </div>
+            <label className="st-field">
+              Ciudad o locación principal
+              <input value={brief.lugar || ""} onChange={(e) => set("lugar", e.target.value)} placeholder="Ej.: Aguascalientes, o Valle de Guadalupe, B.C." />
+            </label>
             <label className="st-field">
               Notas: cliente, locación, talento, entregables
               <textarea rows={4} value={brief.notas} onChange={(e) => set("notas", e.target.value)} placeholder="Ej.: Locación Hacienda La Lomita, 2 actores, subtítulos en inglés, entregar versión 9:16…" />

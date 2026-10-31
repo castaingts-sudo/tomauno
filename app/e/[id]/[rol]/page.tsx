@@ -65,6 +65,9 @@ const CHECK_DRON = [
   "Perímetro de seguridad con talento y público; plan de aterrizaje de emergencia",
 ];
 
+// La IA a veces escribe un párrafo en la fecha; aquí basta la primera frase.
+const fechaCorta = (f = "") => (f.length > 32 ? f.split(/[.,;]/)[0].slice(0, 32) : f);
+
 export default async function HojaPage({ params }: Params) {
   const { id, rol } = await params;
   const data = await cargar(id, rol);
@@ -121,7 +124,7 @@ export default async function HojaPage({ params }: Params) {
           ) : (
             <div className="tu-count">
               <span className="tu-count-big">{primero ? `Día ${primero.dia}` : "—"}</span>
-              <span className="tu-count-label">{primero?.fecha || "Fecha por confirmar"}</span>
+              <span className="tu-count-label">{fechaCorta(primero?.fecha) || "Fecha por confirmar"}</span>
             </div>
           )}
         </div>
@@ -173,7 +176,7 @@ export default async function HojaPage({ params }: Params) {
               <div key={d.dia} className="tu-day">
                 <div className="tu-day-head">
                   <span className="chip accent">Día {d.dia}</span>
-                  <h3>{[d.fecha, d.locacion].filter(Boolean).join(" · ")}</h3>
+                  <h3>{[fechaCorta(d.fecha), d.locacion].filter(Boolean).join(" · ")}</h3>
                   <span className="chip">Llamado {d.llamado}</span>
                 </div>
                 <ol className="tu-tl">
