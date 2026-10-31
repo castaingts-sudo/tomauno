@@ -906,3 +906,57 @@ div.ed { display: block; }
 @media (max-width: 800px) { .ad-dos { grid-template-columns: 1fr; } .ad-lista li { grid-template-columns: 1fr auto; } .ad-lista li em { grid-column: 1 / -1; } }
 .ad-lista li.ad-vacio { display: block; }
 .acc-sep { margin: 8px 0 0; }
+
+/* ───── Capa de cine: misma piel que la portada (negro de sala, tinta cálida, grano, títulos de cartel) ───── */
+:root {
+  --f-serif: var(--font-serif), "Instrument Serif", Georgia, serif;
+}
+:root:not([data-theme="sol"]) {
+  --bg: #050505;
+  --bg-2: #0b0a09;
+  --panel: rgba(236, 231, 220, 0.03);
+  --panel-solid: #0e0d0b;
+  --panel-hi: rgba(236, 231, 220, 0.055);
+  --line: rgba(236, 231, 220, 0.09);
+  --line-2: rgba(236, 231, 220, 0.17);
+  --text: #ece7dc;
+  --muted: #a39d91;
+  --dim: #6e695f;
+  --glow: radial-gradient(1100px 520px at 50% -18%, rgba(255, 176, 0, 0.06), transparent 62%);
+  --grid: none;
+  --shadow: 0 1px 0 rgba(236, 231, 220, 0.04) inset, 0 30px 60px -30px rgba(0, 0, 0, 0.9);
+}
+:root:not([data-theme="sol"]) body::after {
+  content: ""; position: fixed; inset: -50%; z-index: 9999; pointer-events: none; opacity: 0.07;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  animation: cine-grano 0.9s steps(4) infinite;
+}
+@keyframes cine-grano { 0% { transform: translate(0, 0); } 25% { transform: translate(-3%, 2%); } 50% { transform: translate(2%, -3%); } 75% { transform: translate(-2%, -1%); } }
+@media (prefers-reduced-motion: reduce) { :root:not([data-theme="sol"]) body::after { animation: none; } }
+@media print { body::after { display: none !important; } }
+
+/* Títulos de cartel en serif; los números siguen en la tipografía técnica */
+h1, h2,
+.hero-line h2, .st-control-title h2, .st-phead h2, .ad-login h1 {
+  font-family: var(--f-serif); font-weight: 400; letter-spacing: -0.01em;
+}
+.hero-line h2 em, .st-phead h2 em, .st-control-title h2 em { font-style: italic; }
+.top h1 { font-family: var(--f-display); font-weight: 600; letter-spacing: -0.02em; }
+.logline, .st-control-title p, .st-phead p, .lb-vo, .lb-shot-vo, .lb-day-loc, .st-new b, .st-reel-frame b, .acc-plan {
+  font-family: var(--f-serif); font-weight: 400; letter-spacing: 0;
+}
+.logline, .st-phead p, .st-control-title p { font-size: 1.22em; line-height: 1.4; }
+.lb-vo, .lb-shot-vo { font-style: italic; }
+.lb-day-loc { font-size: 24px; }
+.brand-mark { border-radius: 6px; box-shadow: none; }
+body:has(.ld-grain)::after { display: none; }
+.st-next-body h3, .st-card-body h3 { font-family: var(--f-serif); font-weight: 400; letter-spacing: 0; }
+.st-next-body h3 { font-size: clamp(28px, 2.8vw, 38px); line-height: 1.05; }
+.st-card-body h3 { font-size: 24px; line-height: 1.1; }
+/* Botón principal como en la portada: claqueta ámbar, esquinas firmes, sin brillo */
+form > button, button.primary {
+  box-shadow: none; border-radius: 4px; font: 600 11.5px/1.2 var(--f-mono); letter-spacing: 0.16em; text-transform: uppercase;
+}
+form > button { font-size: 12.5px; padding: 15px; }
+.st-next-count b { text-shadow: none; }
+.lb-sec-head h2 { font-size: clamp(30px, 3vw, 42px); letter-spacing: -0.01em; }

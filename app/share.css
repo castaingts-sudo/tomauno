@@ -190,3 +190,10 @@ html, body { overflow-x: hidden; }
 .tu-chips .chip { white-space: normal; border-radius: 10px; max-width: 100%; text-align: left; line-height: 1.4; overflow-wrap: anywhere; }
 .tu-hero h1, .tu-logline { overflow-wrap: anywhere; }
 .rv-animatic { margin-top: 16px; font-size: 15px; padding: 12px 20px; cursor: pointer; }
+
+/* Piel de cine, igual que la portada y el estudio */
+.tu-hero h1 { font-size: clamp(42px, 7.4vw, 92px); line-height: 0.95; letter-spacing: -0.01em; }
+.tu-logline { font-family: var(--f-serif); font-size: clamp(19px, 2.4vw, 25px); line-height: 1.35; }
+.tu-h2 h2 { font-size: clamp(26px, 3.4vw, 38px); letter-spacing: -0.005em; }
+.tu-loc-name { font-family: var(--f-serif); font-weight: 400; font-size: 24px; }
+.tu-brand i { border-radius: 4px; }
