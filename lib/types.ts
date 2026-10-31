@@ -133,4 +133,5 @@ export interface Proyecto {
   share?: { id: string; ownerToken: string };
   equipoShare?: { id: string; ownerToken: string };
   checks?: number[]; // índices del checklist ya hechos
+  clima?: { nombre: string; lat: number; lon: number }; // lugar para el pronóstico del plan de rodaje
 }

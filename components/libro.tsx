@@ -5,6 +5,7 @@ import { useState, type ReactNode } from "react";
 import { svgSrc } from "@/components/estudio";
 import { equipoDe } from "@/lib/equipo";
 import { gearDe } from "@/lib/camaras";
+import { adivinarLugar, ClimaDia, ClimaLugar, useClima } from "@/components/clima";
 import type { Jornada, Paquete, Plano, Proyecto } from "@/lib/types";
 
 // ───────────────────────── utilidades ─────────────────────────
@@ -137,6 +138,8 @@ export function Libro({ proyecto, tab, edit, onChange, irA, dibujando, onRedibuj
     return { ini, fin: acc };
   });
   const total = acc;
+  const wx = useClima(proyecto, onChange);
+  const dron = b.incluirDron || p.guionTecnico.some((s) => /dron/i.test(`${s.camara} ${s.operador}`));
 
   return (
     <div className="lb">
@@ -230,6 +233,7 @@ export function Libro({ proyecto, tab, edit, onChange, irA, dibujando, onRedibuj
         {!b.fechaRodaje && !p.planRodaje.some((j) => ISO.test(j.fecha)) && (
           <p className="lb-aviso no-print">Pon la fecha de cada jornada aquí abajo, o la del primer día arriba junto al título, y el plan se acomoda solo.</p>
         )}
+        <ClimaLugar clima={wx.clima} error={wx.error} cargando={wx.cargando} buscar={wx.buscar} sugerido={adivinarLugar(proyecto)} />
         {p.planRodaje.map((j) => {
           const f = fechaDe(j, b.fechaRodaje);
           const tomas = new Set(j.items.flatMap((it) => it.planos));
@@ -257,6 +261,7 @@ export function Libro({ proyecto, tab, edit, onChange, irA, dibujando, onRedibuj
                   </div>
                 </div>
               </header>
+              <ClimaDia clima={wx.clima} fecha={f} dron={dron} />
               <ol className="lb-strips">
                 {j.items.map((it, n) => {
                   const ops = it.planos.map((id) => p.guionTecnico.find((s) => s.id === id)).filter(Boolean) as Plano[];
