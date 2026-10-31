@@ -127,7 +127,19 @@ export default async function HojaPage({ params }: Params) {
         </div>
         <div>
           <p className="tu-label">Llamado</p>
-          <div className="tu-big">{primero?.llamado || "—"}</div>
+          {(() => {
+            // "04:45 en la finca, equipo hospedado…" → la hora en grande y el resto como nota.
+            const ll = (primero?.llamado || "").trim();
+            const m = ll.match(/^(\d{1,2}[:.]\d{2})\s*(?:h(?:rs?)?\.?)?\s*[,;.\-–—]?\s*(.*)$/i);
+            const hora = m ? m[1].replace(".", ":") : ll.length <= 8 ? ll : "";
+            const nota = m ? m[2] : hora ? "" : ll;
+            return (
+              <>
+                <div className="tu-big">{hora || "—"}</div>
+                {nota && <p className="tu-sub tu-nota">{nota}</p>}
+              </>
+            );
+          })()}
           {primeraToma && <p className="tu-sub">{director ? "Arranca" : "Tu primera toma"}: {primeraToma.hora}</p>}
         </div>
         <div>

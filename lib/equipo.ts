@@ -25,11 +25,23 @@ export function ajustarEquipo(actual: Operador[], camaras: number, dron: boolean
 const norm = (s = "") => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 const esAereo = (p: Plano) => /dron|aereo|rpas/.test(norm(`${p.operador} ${p.camara}`));
 
-// Tomas que le tocan a un operador. Usa "operador" y, en proyectos viejos, adivina por "camara".
+// ¿Esta toma es de este operador? Acepta variantes como "Cam A", "Cámara A (Steadicam)" o "Piloto RPAS".
+function esDe(p: Plano, op: Operador): boolean {
+  const n = norm(p.operador);
+  if (!n) return false;
+  if (n === norm(op.rol)) return true;
+  if (op.tipo === "dron") return /dron|piloto|rpas|aere/.test(n);
+  if (/dron|piloto|rpas|aere/.test(n)) return false;
+  const letra = norm(op.rol).slice(-1);
+  return n.includes(norm(op.rol)) || new RegExp(`\\b(camara|cam|camera|operador)\\s*${letra}\\b|\\b${letra}[\\s-]*cam`).test(n);
+}
+
+// Tomas que le tocan a un operador. Usa "operador" y, en proyectos viejos o con nombres libres, adivina por "camara".
 export function tomasDe(op: Operador, planos: Plano[], equipo: Operador[]): Plano[] {
   if (op.tipo === "director") return planos;
-  const asignadas = planos.filter((p) => norm(p.operador) === norm(op.rol));
-  if (asignadas.length || planos.some((p) => p.operador)) return asignadas;
+  const asignadas = planos.filter((p) => esDe(p, op));
+  if (asignadas.length) return asignadas;
+  if (planos.some((p) => equipo.some((o) => o.tipo !== "director" && esDe(p, o)))) return [];
   if (op.tipo === "dron") return planos.filter(esAereo);
   const porNombre = planos.filter((p) => !esAereo(p) && norm(p.camara).includes(norm(op.rol)));
   if (porNombre.length) return porNombre;

@@ -27,7 +27,8 @@
 .tu-count-date { color: var(--muted); font-size: 14px; margin-top: 4px; }
 .tu-count-date::first-letter { text-transform: uppercase; }
 :root[data-theme="sol"] .tu-count-big { color: #c98a00; }
-.tu-big { font: 700 clamp(30px, 5vw, 44px)/1 var(--f-mono); letter-spacing: -0.02em; }
+.tu-big { font: 700 clamp(30px, 5vw, 44px)/1 var(--f-mono); letter-spacing: -0.02em; overflow-wrap: anywhere; }
+.tu-nota { font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
 .tu-sub { color: var(--muted); font-size: 14px; margin-top: 6px; }
 .tu-call a.tu-map { display: inline-flex; margin-top: 10px; font: 600 12px var(--f-mono); text-decoration: none; border: 1px solid var(--line-2); padding: 6px 10px; border-radius: 999px; color: var(--text); }
 .tu-loc-name { font: 600 19px/1.25 var(--f-display); }
