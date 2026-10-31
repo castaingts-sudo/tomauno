@@ -132,4 +132,5 @@ export interface Proyecto {
   paquete: Paquete;
   share?: { id: string; ownerToken: string };
   equipoShare?: { id: string; ownerToken: string };
+  checks?: number[]; // índices del checklist ya hechos
 }

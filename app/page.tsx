@@ -6,6 +6,7 @@ import { completarPaquete, parsePaquete } from "@/lib/prompt";
 import { ThemeToggle } from "@/components/share-ui";
 import { NuevoProyecto, SalaControl, SelectorCamara, Tablero, cuentaTexto, diasPara, fechaCorta, svgSrc } from "@/components/estudio";
 import { download, slug, toMarkdown } from "@/lib/export";
+import { Libro, moverFechas } from "@/components/libro";
 import type { Brief, Operador, Paquete, Proyecto } from "@/lib/types";
 
 const STORAGE_KEY = "toma-uno:proyectos";
@@ -43,18 +44,26 @@ function guardarLectura(hash: string, l: Lectura) {
   } catch {}
 }
 
-const TABS = [
-  ["resumen", "Resumen"],
-  ["audiovisual", "Guion audiovisual"],
-  ["tecnico", "Guion técnico"],
-  ["storyboard", "Storyboard"],
-  ["rodaje", "Plan de rodaje"],
-  ["equipo", "Equipo y crew"],
-  ["locaciones", "Locaciones"],
-  ["presupuesto", "Presupuesto"],
-  ["post", "Post y checklist"],
-] as const;
-type Tab = (typeof TABS)[number][0];
+const ETIQUETA = {
+  resumen: "Resumen",
+  audiovisual: "Guion audiovisual",
+  storyboard: "Storyboard",
+  tecnico: "Guion técnico",
+  rodaje: "Plan de rodaje",
+  locaciones: "Locaciones",
+  equipo: "Equipo y crew",
+  presupuesto: "Presupuesto",
+  post: "Post y entregas",
+  compartir: "Compartir",
+} as const;
+type Tab = keyof typeof ETIQUETA;
+const ICONOS: Record<Tab, string> = { resumen: "◎", audiovisual: "¶", storyboard: "▦", tecnico: "◫", rodaje: "▤", locaciones: "⌖", equipo: "◉", presupuesto: "$", post: "✓", compartir: "↗" };
+const GRUPOS: [string, Tab[]][] = [
+  ["Proyecto", ["resumen"]],
+  ["Historia", ["audiovisual", "storyboard", "tecnico"]],
+  ["Rodaje", ["rodaje", "locaciones", "equipo"]],
+  ["Producción", ["presupuesto", "post", "compartir"]],
+];
 
 const EMPTY: Brief = { idea: "", duracion: "60 s", formato: "16:9 YouTube", estilo: "", presupuesto: "medio", incluirDron: true, notas: "" };
 
@@ -346,7 +355,7 @@ export default function Home() {
 
       {vista === "proyecto" && proyecto && (
         <section className="result">
-          <ProyectoHead proyecto={proyecto} onVolver={() => setProyecto(null)} />
+          <ProyectoHead proyecto={proyecto} onVolver={() => setProyecto(null)} onChange={actualizar} />
           {dibujando && (
             <div className="card progress st-drawing no-print">
               <div className="progress-head">
@@ -365,7 +374,7 @@ export default function Home() {
   );
 }
 
-function ProyectoHead({ proyecto, onVolver }: { proyecto: Proyecto; onVolver: () => void }) {
+function ProyectoHead({ proyecto, onVolver, onChange }: { proyecto: Proyecto; onVolver: () => void; onChange: (p: Proyecto) => void }) {
   const p = proyecto.paquete;
   const b = proyecto.brief;
   const [n, setN] = useState<number | null>(null);
@@ -377,7 +386,17 @@ function ProyectoHead({ proyecto, onVolver }: { proyecto: Proyecto; onVolver: ()
     <section className="st-phead">
       <div className="st-phead-copy">
         <button type="button" className="st-back no-print" onClick={onVolver}>← Proyectos</button>
-        <span className="kicker">{b.fechaRodaje ? `Rodaje ${fechaCorta(b.fechaRodaje)} · ${cuentaTexto(n, b.diasRodaje)}` : "Preproducción"}</span>
+        <div className="st-phead-when">
+          <span className="kicker">{b.fechaRodaje ? `Rodaje ${fechaCorta(b.fechaRodaje)} · ${cuentaTexto(n, p.planRodaje.length || b.diasRodaje)}` : "Preproducción · sin fecha"}</span>
+          <label className="lb-field no-print">
+            <span>Primer día de rodaje</span>
+            <input
+              type="date"
+              value={b.fechaRodaje ?? ""}
+              onChange={(e) => onChange({ ...proyecto, brief: { ...b, fechaRodaje: e.target.value }, paquete: moverFechas(p, b.fechaRodaje, e.target.value) })}
+            />
+          </label>
+        </div>
         <h2>{p.resumen.titulo}</h2>
         <p>{p.resumen.logline}</p>
         <div className="st-phead-chips">
@@ -428,204 +447,77 @@ function Resultado({ proyecto, tab, setTab, demo, onChange, dibujando, onRedibuj
     }
   }
   const nombre = slug(p.resumen.titulo);
-  const show = (t: Tab) => (tab === t ? "sec" : "sec hide");
+  const [edit, setEdit] = useState(false);
+  const cuenta: Partial<Record<Tab, number>> = { audiovisual: p.guionAudiovisual.length, tecnico: p.guionTecnico.length, storyboard: p.storyboard.length, rodaje: p.planRodaje.length, locaciones: p.locaciones.length };
 
   return (
     <>
       {demo && <p className="banner no-print">Modo demo: agrega ANTHROPIC_API_KEY en .env.local para generar con IA.</p>}
-      <div className="links-grid no-print">
-      <div className="share card">
-        <div className="share-main">
-          <div className="share-icon">🎬</div>
-          <div>
-          <b>Link para el cliente</b>
-          <p>Solo muestra el guion audiovisual y el storyboard, con opción de comentar y aprobar.</p>
-          {shareUrl && (
-            <p className="share-url">
-              <a href={shareUrl} target="_blank" rel="noreferrer">{shareUrl}</a>
-            </p>
-          )}
-          {shareMsg && <p className="muted">{shareMsg}</p>}
-          </div>
-        </div>
-        <div className="share-actions">
-          <button className="primary" onClick={compartir} disabled={compartiendo}>
-            {compartiendo ? "Guardando…" : proyecto.share ? "Actualizar link" : "🔗 Compartir con cliente"}
-          </button>
-          {shareUrl && <button onClick={() => navigator.clipboard?.writeText(shareUrl)}>Copiar</button>}
-          {shareUrl && <a className="btn" href={shareUrl} target="_blank" rel="noreferrer">Ver comentarios</a>}
-        </div>
-      </div>
-      <LinksEquipo proyecto={proyecto} onChange={onChange} />
-      </div>
-      <div className="toolbar no-print">
-        <nav className="tabs">
-          {TABS.map(([k, label]) => (
-            <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>
-              {label}
-            </button>
-          ))}
-        </nav>
-        <div className="actions">
-          <button onClick={() => window.print()}>PDF / Imprimir</button>
-          <button onClick={() => download(`${nombre}.md`, toMarkdown(proyecto), "text/markdown")}>Markdown</button>
-          <button onClick={() => download(`${nombre}.json`, JSON.stringify(proyecto, null, 2), "application/json")}>JSON</button>
-        </div>
-      </div>
-
-      <div className={show("resumen")}>
-        <h2>Resumen</h2>
-        <dl className="grid">
-          <dt>Objetivo</dt><dd>{p.resumen.objetivo}</dd>
-          <dt>Público</dt><dd>{p.resumen.publico}</dd>
-          <dt>Tono</dt><dd>{p.resumen.tono}</dd>
-          <dt>Duración</dt><dd>{p.resumen.duracion}</dd>
-          <dt>Formato</dt><dd>{p.resumen.formato}</dd>
-          <dt>Referencias</dt><dd>{p.resumen.referencias.join(" · ")}</dd>
-        </dl>
-      </div>
-
-      <div className={show("audiovisual")}>
-        <h2>Guion audiovisual</h2>
-        <table>
-          <thead><tr><th>#</th><th>Escena</th><th>Video</th><th>Voz en off</th><th>Música / SFX</th><th>Texto en pantalla</th><th>Dur.</th></tr></thead>
-          <tbody>
-            {p.guionAudiovisual.map((e) => (
-              <tr key={e.numero}><td>{e.numero}</td><td className="mono">{e.encabezado}</td><td>{e.video}</td><td className="vo">{e.vozEnOff}</td><td>{e.audio}</td><td>{e.textoPantalla}</td><td>{e.duracion}</td></tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className={show("tecnico")}>
-        <h2>Guion técnico</h2>
-        <div className="scroll">
-          <table>
-            <thead><tr><th>Plano</th><th>Tipo</th><th>Ángulo</th><th>Movimiento</th><th>Lente</th><th>Operador</th><th>Descripción</th><th>Voz en off</th><th>Audio</th><th>Dur.</th><th>Notas</th></tr></thead>
-            <tbody>
-              {p.guionTecnico.map((s) => (
-                <tr key={s.id}><td className="mono">{s.id}</td><td>{s.tipoPlano}</td><td>{s.angulo}</td><td>{s.movimiento}</td><td>{s.lente}</td><td>{s.operador || s.camara}</td><td>{s.descripcion}</td><td className="vo">{s.vozEnOff}</td><td>{s.audio}</td><td>{s.duracion}</td><td>{s.notas}</td></tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className={show("storyboard")}>
-        <div className="sec-head">
-          <h2>Storyboard</h2>
-          <button className="no-print" disabled={!!dibujando} onClick={() => onRedibujar(proyecto)}>↻ Volver a dibujar</button>
-        </div>
-        <div className="board">
-          {p.storyboard.map((f) => {
-            const plano = p.guionTecnico.find((s) => s.id === f.planoId);
-            return (
-              <figure key={f.planoId}>
-                <div className="vf">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {f.imagen || f.svg ? <img src={f.imagen || svgSrc(f.svg!)} alt="" onError={(e) => { e.currentTarget.style.visibility = "hidden"; }} /> : <div className={`vf-empty${dibujando ? " busy" : ""}`}>{dibujando ? "Dibujando…" : "Sin boceto"}</div>}
-                  <span className="vf-tag">{f.planoId}</span>
-                  {plano && (
-                    <span className="vf-meta">
-                      <span>{plano.tipoPlano}</span>
-                      <span>{plano.lente}</span>
-                    </span>
-                  )}
-                </div>
-                <figcaption>
-                  <b>{f.planoId}</b> {plano && <span className="tag">{plano.tipoPlano} · {plano.movimiento}</span>}
-                  <p>{f.descripcion}</p>
-                  {(f.dialogo || plano?.vozEnOff) && <p className="dlg">{f.dialogo || plano?.vozEnOff}</p>}
-                  <small>{f.transicion}</small>
-                </figcaption>
-              </figure>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className={show("rodaje")}>
-        <h2>Plan de rodaje</h2>
-        {p.planRodaje.map((d) => (
-          <div key={d.dia}>
-            <div className="day-head">
-              <span className="chip accent">Día {d.dia}</span>
-              <h3>{d.fecha} · {d.locacion}</h3>
-              <span className="chip">Llamado {d.llamado}</span>
-            </div>
-            <table>
-              <thead><tr><th>Hora</th><th>Actividad</th><th>Planos</th><th>Locación</th></tr></thead>
-              <tbody>
-                {d.items.map((i, n) => (
-                  <tr key={n}><td className="mono">{i.hora}</td><td>{i.actividad}</td><td className="mono">{i.planos.join(", ")}</td><td>{i.locacion}</td></tr>
+      <div className={`lb-layout${edit ? " editing" : ""}`}>
+        <aside className="lb-rail no-print">
+          <nav>
+            {GRUPOS.map(([grupo, tabs]) => (
+              <div key={grupo} className="lb-rail-group">
+                <span className="lb-rail-title">{grupo}</span>
+                {tabs.map((k) => (
+                  <button key={k} type="button" className={tab === k ? "on" : ""} onClick={() => setTab(k)}>
+                    <span className="lb-ico" aria-hidden>{ICONOS[k]}</span>
+                    {ETIQUETA[k]}
+                    {cuenta[k] !== undefined && <small>{cuenta[k]}</small>}
+                  </button>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            ))}
+          </nav>
+          <div className="lb-rail-tools">
+            <button type="button" className={edit ? "lb-edit on" : "lb-edit"} onClick={() => setEdit(!edit)} aria-pressed={edit}>
+              {edit ? "✓ Listo" : "✎ Editar textos"}
+            </button>
+            <div className="lb-export">
+              <span className="lb-rail-title">Exportar</span>
+              <button onClick={() => window.print()}>PDF</button>
+              <button onClick={() => download(`${nombre}.md`, toMarkdown(proyecto), "text/markdown")}>Markdown</button>
+              <button onClick={() => download(`${nombre}.json`, JSON.stringify(proyecto, null, 2), "application/json")}>JSON</button>
+            </div>
           </div>
-        ))}
-      </div>
-
-      <div className={show("equipo")}>
-        <h2>Equipo</h2>
-        <table>
-          <thead><tr><th>Categoría</th><th>Item</th><th>Cant.</th><th>Notas</th></tr></thead>
-          <tbody>
-            {p.equipo.map((e, n) => (
-              <tr key={n}><td>{e.categoria}</td><td>{e.item}</td><td>{e.cantidad}</td><td>{e.notas}</td></tr>
-            ))}
-          </tbody>
-        </table>
-        <h2>Crew</h2>
-        <table>
-          <thead><tr><th>Rol</th><th>Responsabilidades</th></tr></thead>
-          <tbody>
-            {p.crew.map((c, n) => (
-              <tr key={n}><td>{c.rol}</td><td>{c.responsabilidades}</td></tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className={show("locaciones")}>
-        <h2>Locaciones y permisos</h2>
-        {p.locaciones.map((l, n) => (
-          <div key={n} className="card loc">
-            <h3>{l.nombre}</h3>
-            <p>{l.descripcion}</p>
-            <p><b>Permisos:</b> {l.permisos}</p>
-            <p><b>Riesgos:</b> {l.riesgos}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className={show("presupuesto")}>
-        <h2>Presupuesto estimado ({p.presupuesto.moneda})</h2>
-        <table>
-          <tbody>
-            {p.presupuesto.items.map((i, n) => (
-              <tr key={n}><td>{i.concepto}</td><td className="num">{i.estimado}</td></tr>
-            ))}
-            <tr className="total"><td>Total</td><td className="num">{p.presupuesto.total}</td></tr>
-          </tbody>
-        </table>
-        <p className="muted">{p.presupuesto.notas}</p>
-      </div>
-
-      <div className={show("post")}>
-        <h2>Postproducción</h2>
-        <dl className="grid">
-          <dt>Edición</dt><dd>{p.postproduccion.edicion}</dd>
-          <dt>Color</dt><dd>{p.postproduccion.color}</dd>
-          <dt>Audio</dt><dd>{p.postproduccion.audio}</dd>
-          <dt>Gráficos</dt><dd>{p.postproduccion.graficos}</dd>
-          <dt>Entregables</dt><dd>{p.postproduccion.entregables.join(" · ")}</dd>
-        </dl>
-        <h2>Checklist de preproducción</h2>
-        <ul className="checklist">
-          {p.checklist.map((c, n) => (
-            <li key={n}><label><input type="checkbox" /> {c}</label></li>
-          ))}
-        </ul>
+        </aside>
+        <div className="lb-main">
+          {edit && <p className="lb-editbar no-print">Modo edición: toca cualquier texto del guion, las tomas o el plan para corregirlo. Se guarda solo.</p>}
+          <Libro proyecto={proyecto} tab={tab} edit={edit} onChange={onChange} irA={(t) => setTab(t as Tab)} dibujando={dibujando} onRedibujar={onRedibujar} />
+          <section className={tab === "compartir" ? "sec lb-sec" : "sec lb-sec hide no-print"}>
+            <header className="lb-sec-head">
+              <div>
+                <span className="lb-kicker">Cliente y equipo</span>
+                <h2>Compartir</h2>
+              </div>
+            </header>
+            <div className="links-grid">
+              <div className="share card">
+                <div className="share-main">
+                  <div className="share-icon">🎬</div>
+                  <div>
+                    <b>Link para el cliente</b>
+                    <p>Solo muestra el guion audiovisual y el storyboard, con opción de comentar y aprobar.</p>
+                    {shareUrl && (
+                      <p className="share-url">
+                        <a href={shareUrl} target="_blank" rel="noreferrer">{shareUrl}</a>
+                      </p>
+                    )}
+                    {shareMsg && <p className="muted">{shareMsg}</p>}
+                  </div>
+                </div>
+                <div className="share-actions">
+                  <button className="primary" onClick={compartir} disabled={compartiendo}>
+                    {compartiendo ? "Guardando…" : proyecto.share ? "Actualizar link" : "🔗 Compartir con cliente"}
+                  </button>
+                  {shareUrl && <button onClick={() => navigator.clipboard?.writeText(shareUrl)}>Copiar</button>}
+                  {shareUrl && <a className="btn" href={shareUrl} target="_blank" rel="noreferrer">Ver comentarios</a>}
+                </div>
+              </div>
+              <LinksEquipo proyecto={proyecto} onChange={onChange} />
+            </div>
+          </section>
+        </div>
       </div>
     </>
   );
