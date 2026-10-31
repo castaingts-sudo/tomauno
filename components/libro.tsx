@@ -109,6 +109,68 @@ function Sec({ id, tab, titulo, kicker, extra, children }: { id: string; tab: st
   );
 }
 
+// Redibuja un solo cuadro con las indicaciones del director, partiendo del dibujo actual.
+function Retoque({ proyecto, planoId, onChange }: { proyecto: Proyecto; planoId: string; onChange: (p: Proyecto) => void }) {
+  const [abierto, setAbierto] = useState(false);
+  const [texto, setTexto] = useState("");
+  const [estado, setEstado] = useState<"" | "dibujando" | "error">("");
+  const [anterior, setAnterior] = useState<string | null>(null);
+  const p = proyecto.paquete;
+  const panel = p.storyboard.find((x) => x.planoId === planoId);
+  const plano = p.guionTecnico.find((x) => x.id === planoId);
+  if (!panel || !plano) return null;
+
+  const poner = (imagen: string) =>
+    onChange({ ...proyecto, paquete: { ...p, storyboard: p.storyboard.map((x) => (x.planoId === planoId ? { ...x, imagen } : x)) } });
+
+  async function enviar(ev: React.FormEvent) {
+    ev.preventDefault();
+    if (!texto.trim()) return;
+    setEstado("dibujando");
+    try {
+      const res = await fetch("/api/storyboard", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planos: [plano],
+          estilo: proyecto.brief.estilo,
+          contexto: { titulo: p.resumen.titulo, escenas: p.guionAudiovisual.map((e) => ({ numero: e.numero, encabezado: e.encabezado })), indicaciones: texto.trim(), base: panel!.imagen },
+        }),
+      });
+      const j = await res.json();
+      const nuevo = j.paneles?.find((x: { planoId: string; imagen?: string }) => x.planoId === planoId)?.imagen;
+      if (!nuevo) throw new Error(j.aviso || j.error || "sin dibujo");
+      setAnterior(panel!.imagen || null);
+      poner(nuevo);
+      setEstado("");
+      setAbierto(false);
+      setTexto("");
+    } catch {
+      setEstado("error");
+    }
+  }
+
+  return (
+    <div className="lb-retoque no-print">
+      {!abierto ? (
+        <span className="lb-retoque-acc">
+          <button type="button" onClick={() => setAbierto(true)}>✎ Redibujar este cuadro</button>
+          {anterior && <button type="button" onClick={() => { poner(anterior); setAnterior(null); }}>↺ Deshacer</button>}
+        </span>
+      ) : (
+        <form onSubmit={enviar}>
+          <textarea value={texto} onChange={(e) => setTexto(e.target.value)} rows={2} autoFocus placeholder="Ej. que ella mire a cámara, más gente al fondo, plano más cerrado…" disabled={estado === "dibujando"} />
+          <span className="lb-retoque-acc">
+            <button type="submit" className="primary" disabled={estado === "dibujando" || !texto.trim()}>{estado === "dibujando" ? "Dibujando…" : "Redibujar"}</button>
+            <button type="button" onClick={() => { setAbierto(false); setEstado(""); }} disabled={estado === "dibujando"}>Cancelar</button>
+          </span>
+          {estado === "error" && <small className="lb-retoque-err">No se pudo redibujar. Intenta de nuevo en un momento.</small>}
+        </form>
+      )}
+    </div>
+  );
+}
+
 // ───────────────────────── libro ─────────────────────────
 
 export interface LibroProps {
@@ -230,6 +292,7 @@ export function Libro({ proyecto, tab, edit, onChange, irA, dibujando, onRedibuj
                   <p>{f.descripcion}</p>
                   {(f.dialogo || s?.vozEnOff) && <p className="dlg">{f.dialogo || s?.vozEnOff}</p>}
                   <small>{f.transicion}</small>
+                  <Retoque proyecto={proyecto} planoId={f.planoId} onChange={onChange} />
                 </figcaption>
               </figure>
             );

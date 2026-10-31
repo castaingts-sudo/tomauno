@@ -845,3 +845,9 @@ div.ed { display: block; }
 @media (max-width: 640px) { .am-slug { display: none; } .am-hud { font-size: 10.5px; max-width: calc(100% - 28px); } .am-sub { bottom: 14px; } .am-sub span { font-size: 13px; } .am-frame { width: 100%; } }
 @media print { .am { display: none; } }
 .lb-sb-acc { display: inline-flex; gap: 8px; flex-wrap: wrap; }
+.lb-retoque { margin-top: 8px; }
+.lb-retoque form { display: flex; flex-direction: column; gap: 6px; margin: 0; }
+.lb-retoque textarea { width: 100%; margin: 0; font-size: 13px; padding: 8px 10px; resize: vertical; }
+.lb-retoque-acc { display: flex; gap: 6px; flex-wrap: wrap; }
+.lb-retoque button { font-size: 12px; padding: 6px 10px; width: auto; }
+.lb-retoque-err { color: var(--rec); }

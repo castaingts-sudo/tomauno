@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { writeBytes } from "./store";
+import { readBytes, writeBytes } from "./store";
 import type { Plano } from "./types";
 
 // Dibujos de storyboard con el generador de imágenes de Google (Gemini).
@@ -12,6 +12,18 @@ export interface Contexto {
   estilo?: string;
   escenas?: { numero: number; encabezado: string }[];
   personajes?: string; // descripción fija del talento para que se vea igual en todas las tomas
+  indicaciones?: string; // cambios que pide el director para este cuadro
+  base?: string; // dibujo anterior (/api/img/storyboard/…) para corregirlo en vez de empezar de cero
+}
+
+// Lee un dibujo guardado para mandarlo como referencia.
+async function dibujoAnterior(url?: string): Promise<{ data: string; mime: string } | null> {
+  const m = url?.match(/^\/api\/img\/(storyboard\/[\w-]+\.(png|jpg))$/);
+  if (!m) return null;
+  const raw = await readBytes(m[1]).catch(() => null);
+  if (!raw) return null;
+  const buf = Buffer.isBuffer(raw) ? raw : Buffer.from(await new Response(raw).arrayBuffer());
+  return { data: buf.toString("base64"), mime: m[2] === "jpg" ? "image/jpeg" : "image/png" };
 }
 
 function promptDe(p: Plano, c: Contexto): string {
@@ -27,6 +39,7 @@ function promptDe(p: Plano, c: Contexto): string {
     `Action in frame: ${p.descripcion}`,
     c.personajes ? `Characters (keep consistent): ${c.personajes}` : "",
     c.estilo ? `Mood of the production: ${c.estilo}.` : "",
+    c.indicaciones ? `Director's notes for this frame (these take priority over everything above): ${c.indicaciones}` : "",
   ]
     .filter(Boolean)
     .join("\n");
@@ -34,11 +47,18 @@ function promptDe(p: Plano, c: Contexto): string {
 
 // Genera y guarda el dibujo; devuelve la URL interna para usar en <img>.
 export async function dibujar(p: Plano, c: Contexto): Promise<string> {
+  const ref = c.indicaciones ? await dibujoAnterior(c.base) : null;
+  const parts = ref
+    ? [
+        { inlineData: { mimeType: ref.mime, data: ref.data } },
+        { text: `Redraw this storyboard frame applying the director's notes. Keep the same pencil style, characters, location and camera setup unless the notes change them.\n\n${promptDe(p, c)}` },
+      ]
+    : [{ text: promptDe(p, c) }];
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY! },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: promptDe(p, c) }] }],
+      contents: [{ parts }],
       generationConfig: { responseModalities: ["IMAGE"], imageConfig: { aspectRatio: "16:9" } },
     }),
   });
