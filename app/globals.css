@@ -796,3 +796,5 @@ div.ed { display: block; }
   .lb-group-head { position: static; }
   .ed { outline: none; }
 }
+.lb-wx-lugar > button { width: auto; padding: 7px 14px; font-size: 13px; }
+.lb-wx-lugar input { margin: 0; padding: 7px 10px; }
