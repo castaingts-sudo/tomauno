@@ -100,7 +100,7 @@
 .nb-edge { position: absolute; top: -20px; left: 2px; font: 700 10px var(--nb-type); letter-spacing: 0.12em; color: #e98a2b; }
 .nb-frame figcaption { font: 400 11.5px var(--nb-type); color: #cfc6b6; padding-top: 8px; }
 .nb-grease { position: absolute; inset: -14% -8% -2% -8%; width: 116%; height: 116%; fill: none; stroke: var(--nb-red); stroke-width: 3.2; stroke-linecap: round; overflow: visible; filter: drop-shadow(0 0 0.5px rgba(195, 54, 31, 0.6)); }
-.nb-note-pick { right: -6px; bottom: -44px; transform: rotate(-6deg); font-size: 30px; }
+.nb-note-pick { right: -10px; bottom: -78px; transform: rotate(-6deg); font-size: 30px; }
 
 /* Fichas */
 .nb-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
