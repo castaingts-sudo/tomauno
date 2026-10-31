@@ -6,6 +6,7 @@ import { svgSrc } from "@/components/estudio";
 import { equipoDe } from "@/lib/equipo";
 import { gearDe } from "@/lib/camaras";
 import { Animatic } from "@/components/animatic";
+import { cabecerasAcceso } from "@/lib/acceso-cliente";
 import { adivinarLugar, ClimaDia, ClimaLugar, useClima } from "@/components/clima";
 import type { Jornada, Paquete, Plano, Proyecto } from "@/lib/types";
 
@@ -130,7 +131,7 @@ function Retoque({ proyecto, planoId, onChange }: { proyecto: Proyecto; planoId:
     try {
       const res = await fetch("/api/storyboard", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...cabecerasAcceso() },
         body: JSON.stringify({
           planos: [plano],
           estilo: proyecto.brief.estilo,

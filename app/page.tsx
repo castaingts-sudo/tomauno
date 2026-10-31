@@ -1,5 +1,6 @@
 import Link from "next/link";
 import "./landing.css";
+import { PLANES, planDe, precioTexto } from "@/lib/planes";
 
 // Página de presentación: lo que ve un director o fotógrafo antes de entrar al estudio.
 
@@ -28,16 +29,12 @@ const PASOS = [
   ["03", "Compártelo y filma", "El cliente comenta y aprueba. Tu equipo recibe su hoja por WhatsApp."],
 ];
 
-const POR_PROYECTO = [
-  { n: "Spot / redes", tope: "Hasta 3 min · 30 tomas", precio: "891" },
-  { n: "Institucional", tope: "Hasta 8 min · 60 tomas", precio: "2,491", top: true },
-  { n: "Cortometraje", tope: "Hasta 20 min · 120 tomas", precio: "9,991" },
-];
-
-const MENSUAL = [
-  { n: "Pro", tope: "250 tomas al mes · 1 usuario", precio: "5,991", top: true, extra: "Para directores y fotógrafos que filman cada semana." },
-  { n: "Estudio", tope: "800 tomas al mes · equipo", precio: "14,991", extra: "Para casas productoras con varios directores." },
-];
+// Precios y topes salen del mismo catálogo que cobra Stripe.
+const DESTACADO = ["institucional", "pro"];
+const EXTRA_MES: Record<string, string> = { pro: "Para directores y fotógrafos que filman cada semana.", estudio: "Para casas productoras con varios directores." };
+const POR_PROYECTO = PLANES.filter((p) => p.tipo === "proyecto").map((p) => ({ id: p.id, n: p.nombre, tope: p.tope, precio: precioTexto(p), top: DESTACADO.includes(p.id) }));
+const MENSUAL = PLANES.filter((p) => p.tipo === "mensual").map((p) => ({ id: p.id, n: p.nombre, tope: p.tope, precio: precioTexto(p), top: DESTACADO.includes(p.id), extra: EXTRA_MES[p.id] }));
+const EXTRA = precioTexto(planDe("extra")!);
 
 const PREGUNTAS = [
   ["¿Qué cuenta como una toma?", "Cada plano del guion técnico con su cuadro de storyboard. Un spot de 30 segundos suele tener entre 12 y 25 tomas."],
@@ -216,7 +213,7 @@ export default function Landing() {
                   <li>Storyboard dibujado + 2 redibujos</li>
                   <li>Links de cliente y equipo</li>
                 </ul>
-                <Link href="/estudio" className={p.top ? "ld-btn" : "ld-btn ghost"}>Crear proyecto</Link>
+                <a href={`/api/checkout?plan=${p.id}`} className={p.top ? "ld-btn" : "ld-btn ghost"}>Comprar</a>
               </article>
             ))}
           </div>
@@ -230,9 +227,9 @@ export default function Landing() {
                 <ul>
                   <li>{p.extra}</li>
                   <li>Redibujos ilimitados dentro de tu bolsa</li>
-                  <li>Paquete extra de 25 tomas: $791</li>
+                  <li>Paquete extra de 25 tomas: ${EXTRA}</li>
                 </ul>
-                <Link href="/estudio" className={p.top ? "ld-btn" : "ld-btn ghost"}>Empezar</Link>
+                <a href={`/api/checkout?plan=${p.id}`} className={p.top ? "ld-btn" : "ld-btn ghost"}>Suscribirme</a>
               </article>
             ))}
           </div>

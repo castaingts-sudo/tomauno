@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { STORYBOARD_PROMPT, STORYBOARD_SCHEMA } from "@/lib/prompt";
 import { dibujar, hayGenerador, type Contexto } from "@/lib/imagen";
+import { permiso, registrarUso } from "@/lib/acceso";
 import type { Plano } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -13,6 +14,9 @@ const MODEL = process.env.CLAUDE_MODEL || "claude-opus-5-5";
 export async function POST(req: Request) {
   const { planos: todos, estilo, contexto } = (await req.json()) as { planos: Plano[]; estilo?: string; contexto?: Contexto };
   if (!Array.isArray(todos) || !todos.length) return Response.json({ error: "Sin planos." }, { status: 400 });
+  if (todos.length > 8) return Response.json({ error: "Máximo 8 tomas por llamada." }, { status: 400 });
+  const pm = await permiso(req, 0);
+  if (pm instanceof Response) return pm;
 
   const listos: { planoId: string; imagen?: string; svg?: string }[] = [];
   let planos = todos;
@@ -26,6 +30,7 @@ export async function POST(req: Request) {
         aviso ||= String(r.reason instanceof Error ? r.reason.message : r.reason).slice(0, 300);
       }
     });
+    if (listos.length) await registrarUso(pm, "dibujo", listos.length, contexto?.titulo);
     planos = todos.filter((p) => !listos.some((x) => x.planoId === p.id));
     if (!planos.length) return Response.json({ paneles: listos });
   }

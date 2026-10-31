@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { ajustarEquipo, equipoDe, tomasDe } from "@/lib/equipo";
 import { completarPaquete, parsePaquete } from "@/lib/prompt";
 import { ThemeToggle } from "@/components/share-ui";
+import { Acceso } from "@/components/acceso";
+import { cabecerasAcceso } from "@/lib/acceso-cliente";
 import { NuevoProyecto, SalaControl, SelectorCamara, Tablero, cuentaTexto, diasPara, fechaCorta, svgSrc } from "@/components/estudio";
 import { download, slug, toMarkdown } from "@/lib/export";
 import { Libro, moverFechas } from "@/components/libro";
@@ -145,7 +147,7 @@ export default function Home() {
       } else {
         const fd = new FormData();
         fd.append("file", file);
-        const res = await fetch("/api/extract", { method: "POST", body: fd });
+        const res = await fetch("/api/extract", { method: "POST", body: fd, headers: cabecerasAcceso() });
         j = await res.json().catch(() => ({ error: `Error ${res.status}` }));
         if (!res.ok) throw new Error((j as { error?: string }).error || `Error ${res.status}`);
         if (hash) guardarLectura(hash, { campos: j.campos, documento: j.documento, archivo: j.archivo });
@@ -173,7 +175,7 @@ export default function Home() {
   async function correrEtapa(etapa: 1 | 2, previo?: string, antes = ""): Promise<string> {
     const res = await fetch("/api/generate", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...cabecerasAcceso() },
       body: JSON.stringify({ brief, etapa, previo }),
     });
     if (!res.ok || !res.body) {
@@ -265,7 +267,7 @@ export default function Home() {
         try {
           const res = await fetch("/api/storyboard", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", ...cabecerasAcceso() },
             body: JSON.stringify({ planos, estilo: p.brief.estilo, contexto }),
           });
           const j = await res.json();
@@ -331,6 +333,7 @@ export default function Home() {
           {vista === "proyecto" && (
             <button type="button" className="primary top-new" onClick={nuevo}>＋ Nuevo</button>
           )}
+          <Acceso />
           <ThemeToggle />
         </div>
       </header>

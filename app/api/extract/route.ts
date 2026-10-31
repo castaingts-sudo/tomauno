@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import mammoth from "mammoth";
 import { BRIEF_FIELDS_SCHEMA, EXTRACT_PROMPT } from "@/lib/prompt";
+import { permiso } from "@/lib/acceso";
 import type { Brief } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -14,6 +15,8 @@ type Campos = Omit<Brief, "archivo" | "documento" | "pdf">;
 
 // Recibe un brief (Word, PDF, TXT o MD) y devuelve los campos del formulario llenos.
 export async function POST(req: Request) {
+  const pm = await permiso(req, 1);
+  if (pm instanceof Response) return pm;
   const form = await req.formData();
   const file = form.get("file");
   if (!(file instanceof File)) return Response.json({ error: "No se recibió archivo." }, { status: 400 });

@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { SYSTEM_PROMPT, etapaPrompt, userPrompt } from "@/lib/prompt";
 import { samplePaquete } from "@/lib/sample";
+import { limiteDe, permiso, registrarUso } from "@/lib/acceso";
 import type { Brief } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -21,6 +22,13 @@ export async function POST(req: Request) {
   if (!brief?.idea?.trim()) {
     return Response.json({ error: "Escribe la idea del video." }, { status: 400 });
   }
+  const p = await permiso(req, etapa === 1 ? 1 : 0);
+  if (p instanceof Response) return p;
+  const lim = limiteDe(p);
+  const limite =
+    etapa === 1 && (lim.tomas || lim.minutos)
+      ? `\n\nLÍMITE DEL PLAN DEL USUARIO: ${lim.tomas ? `máximo ${lim.tomas} tomas en el guion técnico (y el mismo número de cuadros de storyboard)` : ""}${lim.tomas && lim.minutos ? "; " : ""}${lim.minutos ? `duración total de hasta ${lim.minutos} minutos` : ""}. Respétalo aunque el brief pida más; si no cabe, condensa.`
+      : "";
 
   const encoder = new TextEncoder();
 
@@ -65,12 +73,16 @@ export async function POST(req: Request) {
                 ...(brief.pdf
                   ? [{ type: "document" as const, source: { type: "base64" as const, media_type: "application/pdf" as const, data: brief.pdf } }]
                   : []),
-                { type: "text" as const, text: `${userPrompt(brief)}\n\n${etapaPrompt(etapa, previo)}` },
+                { type: "text" as const, text: `${userPrompt(brief)}${limite}\n\n${etapaPrompt(etapa, previo)}` },
               ],
             },
           ],
         });
-        msgStream.on("text", (delta) => controller.enqueue(encoder.encode(delta)));
+        let todo = "";
+        msgStream.on("text", (delta) => {
+          todo += delta;
+          controller.enqueue(encoder.encode(delta));
+        });
         const final = await msgStream.finalMessage();
         if (final.stop_reason === "refusal") {
           controller.enqueue(encoder.encode("\n[[ERROR]]El modelo rechazó la solicitud."));
@@ -78,6 +90,12 @@ export async function POST(req: Request) {
           controller.enqueue(encoder.encode("\n[[ERROR]]La respuesta se cortó por longitud. Reduce la duración o el detalle."));
         } else {
           controller.enqueue(encoder.encode(FIN));
+          if (etapa === 1) {
+            const gt = todo.slice(todo.indexOf('"guionTecnico"'), todo.indexOf('"storyboard"') > 0 ? todo.indexOf('"storyboard"') : undefined);
+            const tomas = (gt.match(/"tipoPlano"\s*:/g) || []).length;
+            const titulo = todo.match(/"titulo"\s*:\s*"([^"]{0,120})"/)?.[1];
+            await registrarUso(p, "proyecto", tomas, titulo);
+          }
         }
       } catch (err) {
         const msg =
