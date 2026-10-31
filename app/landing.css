@@ -143,3 +143,7 @@
   .ld-frame img { animation: none; }
   .ld-playhead, .ld-frames figure { animation: none; }
 }
+/* Video promocional */
+.ld-promo { max-width: 1180px; margin: 8px auto 40px; padding: 0 clamp(16px, 4vw, 40px); }
+.ld-promo-video { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 18px; border: 1px solid rgba(255, 255, 255, 0.08); background: #000; box-shadow: 0 30px 80px -30px rgba(255, 176, 0, 0.25); }
+@media (max-width: 640px) and (orientation: portrait) { .ld-promo-video { aspect-ratio: 9 / 16; max-height: 82vh; margin: 0 auto; width: auto; max-width: 100%; } }

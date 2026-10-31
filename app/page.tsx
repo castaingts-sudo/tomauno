@@ -29,14 +29,14 @@ const PASOS = [
 ];
 
 const POR_PROYECTO = [
-  { n: "Spot / redes", tope: "Hasta 3 min · 30 tomas", precio: "2,490" },
-  { n: "Institucional", tope: "Hasta 8 min · 60 tomas", precio: "4,990", top: true },
-  { n: "Cortometraje", tope: "Hasta 20 min · 120 tomas", precio: "9,990" },
+  { n: "Spot / redes", tope: "Hasta 3 min · 30 tomas", precio: "891" },
+  { n: "Institucional", tope: "Hasta 8 min · 60 tomas", precio: "2,491", top: true },
+  { n: "Cortometraje", tope: "Hasta 20 min · 120 tomas", precio: "9,991" },
 ];
 
 const MENSUAL = [
-  { n: "Pro", tope: "250 tomas al mes · 1 usuario", precio: "5,990", top: true, extra: "Para directores y fotógrafos que filman cada semana." },
-  { n: "Estudio", tope: "800 tomas al mes · equipo", precio: "14,990", extra: "Para casas productoras con varios directores." },
+  { n: "Pro", tope: "250 tomas al mes · 1 usuario", precio: "5,991", top: true, extra: "Para directores y fotógrafos que filman cada semana." },
+  { n: "Estudio", tope: "800 tomas al mes · equipo", precio: "14,991", extra: "Para casas productoras con varios directores." },
 ];
 
 const PREGUNTAS = [
@@ -114,6 +114,13 @@ export default function Landing() {
             <i className="ld-playhead" />
           </div>
         </div>
+      </section>
+
+      <section className="ld-promo" aria-label="Toma uno en video">
+        <video className="ld-promo-video" autoPlay muted loop playsInline preload="metadata" poster="/promo/poster.jpg">
+          <source src="/promo/toma-uno-9x16.mp4" type="video/mp4" media="(max-width: 640px) and (orientation: portrait)" />
+          <source src="/promo/toma-uno-16x9.mp4" type="video/mp4" />
+        </video>
       </section>
 
       <section className="ld-for">
@@ -223,7 +230,7 @@ export default function Landing() {
                 <ul>
                   <li>{p.extra}</li>
                   <li>Redibujos ilimitados dentro de tu bolsa</li>
-                  <li>Paquete extra de 25 tomas: $790</li>
+                  <li>Paquete extra de 25 tomas: $791</li>
                 </ul>
                 <Link href="/estudio" className={p.top ? "ld-btn" : "ld-btn ghost"}>Empezar</Link>
               </article>
