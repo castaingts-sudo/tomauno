@@ -3,66 +3,12 @@ import "./landing.css";
 
 // Página de presentación: lo que ve un director o fotógrafo antes de entrar al estudio.
 
+// Dibujos reales hechos por el estudio (proyecto de muestra "Café de altura").
 const CUADROS = [
-  {
-    id: "1A",
-    plano: "GPG aéreo",
-    lente: "24 mm",
-    svg: (
-      <svg viewBox="0 0 320 180" aria-hidden>
-        <path d="M0 120 L60 70 L105 98 L160 40 L225 92 L270 62 L320 96" />
-        <path d="M0 150 Q160 118 320 150" className="soft" />
-        <path d="M120 150 L150 128 L190 128 L215 150" className="soft" />
-        <path d="M168 140 L168 98 M160 108 L168 96 L176 108" className="arrow" />
-        <circle cx="262" cy="34" r="12" className="soft" />
-      </svg>
-    ),
-  },
-  {
-    id: "1B",
-    plano: "PM gimbal",
-    lente: "35 mm",
-    svg: (
-      <svg viewBox="0 0 320 180" aria-hidden>
-        <path d="M0 140 L320 140" className="soft" />
-        <circle cx="130" cy="52" r="13" />
-        <path d="M130 65 L130 108 M130 78 L110 98 M130 78 L152 92 M130 108 L116 140 M130 108 L144 140" />
-        <circle cx="196" cy="56" r="12" />
-        <path d="M196 68 L196 108 M196 80 L178 96 M196 80 L216 98 M196 108 L184 140 M196 108 L208 140" />
-        <path d="M60 160 L260 160 M246 152 L260 160 L246 168" className="arrow" />
-      </svg>
-    ),
-  },
-  {
-    id: "2A",
-    plano: "PP",
-    lente: "85 mm",
-    svg: (
-      <svg viewBox="0 0 320 180" aria-hidden>
-        <ellipse cx="160" cy="92" rx="46" ry="58" />
-        <path d="M138 84 Q146 78 154 84 M168 84 Q176 78 184 84" />
-        <path d="M150 122 Q160 130 172 122" />
-        <path d="M160 92 L156 108 L164 108" className="soft" />
-        <path d="M100 180 Q160 140 220 180" />
-        <path d="M40 30 L40 150 M280 30 L280 150" className="soft" />
-      </svg>
-    ),
-  },
-  {
-    id: "3A",
-    plano: "Órbita dron",
-    lente: "24 mm",
-    svg: (
-      <svg viewBox="0 0 320 180" aria-hidden>
-        <path d="M0 132 L320 132" className="soft" />
-        <path d="M140 132 L140 92 L180 92 L180 132 M132 92 L160 70 L188 92" />
-        <ellipse cx="160" cy="108" rx="120" ry="44" className="arrow dash" />
-        <path d="M268 96 L280 108 L264 112" className="arrow" />
-        <circle cx="56" cy="40" r="4" />
-        <path d="M44 40 L68 40 M56 28 L56 52" className="soft" />
-      </svg>
-    ),
-  },
+  { id: "1A", plano: "GPG aéreo", lente: "24 mm", img: "/api/img/storyboard/JhSnNbIg5snLyw-1A.png", alt: "Vista aérea de la sierra con niebla y un camino hacia la finca" },
+  { id: "1B", plano: "PM gimbal", lente: "35 mm", img: "/api/img/storyboard/EQcJ7Ka9Yg-bbA-1B.png", alt: "Productora y su hijo caminan entre los cafetos" },
+  { id: "2A", plano: "PP", lente: "85 mm", img: "/api/img/storyboard/d8YhmVaIyKatzQ-2A.png", alt: "Primer plano de la productora con granos de café en la mano" },
+  { id: "3A", plano: "Órbita dron", lente: "24 mm", img: "/api/img/storyboard/HXPkpebjrtwN2w-3A.png", alt: "Órbita de dron sobre la casa de la finca y el patio de secado" },
 ];
 
 const ENTREGA = [
@@ -148,7 +94,8 @@ export default function Landing() {
             {CUADROS.map((c, i) => (
               <figure key={c.id} style={{ animationDelay: `${0.15 * i}s` }}>
                 <div className="ld-frame">
-                  {c.svg}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={c.img} alt={c.alt} loading="eager" style={{ animationDelay: `${0.25 + 0.2 * i}s` }} />
                   <span className="ld-frame-id">{c.id}</span>
                 </div>
                 <figcaption>
