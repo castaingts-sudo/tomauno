@@ -86,7 +86,7 @@ export function Acceso() {
               <a className="btn primary" href={`/api/checkout?plan=extra&token=${encodeURIComponent(acc.token)}`}>＋ 25 tomas más · $791</a>
               <details>
                 <summary>Usar en otro dispositivo</summary>
-                <p className="acc-dato">Copia tu código de acceso y pégalo en el otro equipo:</p>
+                <p className="acc-dato">Tus proyectos se guardan en tu cuenta. Pega este código en el otro equipo y aparecen ahí:</p>
                 <code className="acc-code">{acc.token}</code>
                 <button type="button" onClick={() => navigator.clipboard?.writeText(acc.token)}>Copiar código</button>
               </details>

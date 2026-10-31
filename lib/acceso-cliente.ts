@@ -7,8 +7,10 @@ const poner = (k: string, v: string) => { try { if (v) localStorage.setItem(k, v
 
 export const tokenAcceso = () => leer(K_ACCESO);
 export const claveAdmin = () => leer(K_ADMIN);
-export const guardarToken = (t: string) => poner(K_ACCESO, t);
-export const guardarAdmin = (c: string) => poner(K_ADMIN, c);
+// Avisa al estudio para que traiga los proyectos de esa cuenta.
+const avisar = (v: string) => { if (v && typeof window !== "undefined") window.dispatchEvent(new Event("toma-acceso")); };
+export const guardarToken = (t: string) => { poner(K_ACCESO, t); avisar(t); };
+export const guardarAdmin = (c: string) => { poner(K_ADMIN, c); avisar(c); };
 
 export function cabecerasAcceso(): Record<string, string> {
   const h: Record<string, string> = {};

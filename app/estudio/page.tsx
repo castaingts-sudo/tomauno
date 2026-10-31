@@ -5,6 +5,7 @@ import { ajustarEquipo, equipoDe, tomasDe } from "@/lib/equipo";
 import { completarPaquete, parsePaquete } from "@/lib/prompt";
 import { ThemeToggle } from "@/components/share-ui";
 import { Acceso } from "@/components/acceso";
+import { borrarEnNube, sincronizar, subir } from "@/lib/nube";
 import { cabecerasAcceso } from "@/lib/acceso-cliente";
 import { NuevoProyecto, SalaControl, SelectorCamara, Tablero, cuentaTexto, diasPara, fechaCorta, svgSrc } from "@/components/estudio";
 import { download, slug, toMarkdown } from "@/lib/export";
@@ -77,9 +78,21 @@ function loadProyectos(): Proyecto[] {
   }
 }
 
+// Objetos ya guardados: lo que no esté aquí cambió y se sube a la cuenta.
+const vistos = new WeakSet<object>();
+
 function saveProyectos(list: Proyecto[]) {
+  const ahora = new Date().toISOString();
+  const sellados = list.map((p) => {
+    if (vistos.has(p)) return p;
+    const s = { ...p, editado: ahora };
+    vistos.add(p);
+    vistos.add(s);
+    subir(s);
+    return s;
+  });
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list.slice(0, 20)));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sellados.slice(0, 30)));
   } catch {}
 }
 
@@ -107,7 +120,20 @@ export default function Home() {
   const [avisoDibujo, setAvisoDibujo] = useState("");
 
   useEffect(() => {
-    setHistorial(loadProyectos());
+    const locales = loadProyectos();
+    locales.forEach((p) => vistos.add(p));
+    setHistorial(locales);
+    const traerDeLaCuenta = async () => {
+      const todos = await sincronizar(loadProyectos());
+      if (!todos) return;
+      todos.forEach((p) => vistos.add(p));
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(todos.slice(0, 30)));
+      } catch {}
+      setHistorial(todos);
+    };
+    traerDeLaCuenta();
+    window.addEventListener("toma-acceso", traerDeLaCuenta);
     try {
       const b = JSON.parse(localStorage.getItem(BORRADOR_KEY) || "null");
       if (b?.idea !== undefined) setBrief(b);
@@ -305,6 +331,7 @@ export default function Home() {
   }
 
   function borrar(id: string) {
+    borrarEnNube(id);
     const list = historial.filter((p) => p.id !== id);
     setHistorial(list);
     saveProyectos(list);
