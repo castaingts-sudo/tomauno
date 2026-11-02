@@ -22,7 +22,11 @@ export async function POST(req: Request) {
   let planos = todos;
   let aviso = "";
   if (hayGenerador()) {
-    const res = await Promise.allSettled(todos.map((p) => dibujar(p, { ...contexto, estilo })));
+    // De dos en dos para no rebasar el límite por minuto de Google.
+    const res: PromiseSettledResult<string>[] = [];
+    for (let i = 0; i < todos.length; i += 2) {
+      res.push(...(await Promise.allSettled(todos.slice(i, i + 2).map((p) => dibujar(p, { ...contexto, estilo })))));
+    }
     res.forEach((r, i) => {
       if (r.status === "fulfilled") listos.push({ planoId: todos[i].id, imagen: r.value });
       else {

@@ -288,8 +288,12 @@ export default function Home() {
     let hechos = 0;
     setDibujando({ hechos, total: lotes.length });
     const dibujos: Record<string, { svg?: string; imagen?: string }> = {};
-    await Promise.all(
-      lotes.map(async (planos) => {
+    // Dos lotes a la vez (máximo 4 dibujos en paralelo) para no topar el límite de Google.
+    const cola = [...lotes];
+    const trabajar = async () => {
+      for (let planos = cola.shift(); planos; planos = cola.shift()) await dibujarLote(planos);
+    };
+    const dibujarLote = async (planos: (typeof lotes)[number]) => {
         try {
           const res = await fetch("/api/storyboard", {
             method: "POST",
@@ -311,8 +315,8 @@ export default function Home() {
           saveProyectos(nueva);
           return nueva;
         });
-      }),
-    );
+    };
+    await Promise.all([trabajar(), trabajar()]);
     setDibujando(null);
   }
 

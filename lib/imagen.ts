@@ -54,14 +54,23 @@ export async function dibujar(p: Plano, c: Contexto): Promise<string> {
         { text: `Redraw this storyboard frame applying the director's notes. Keep the same pencil style, characters, location and camera setup unless the notes change them.\n\n${promptDe(p, c)}` },
       ]
     : [{ text: promptDe(p, c) }];
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY! },
-    body: JSON.stringify({
-      contents: [{ parts }],
-      generationConfig: { responseModalities: ["IMAGE"], imageConfig: { aspectRatio: "16:9" } },
-    }),
+  const cuerpo = JSON.stringify({
+    contents: [{ parts }],
+    generationConfig: { responseModalities: ["IMAGE"], imageConfig: { aspectRatio: "16:9" } },
   });
+  // Google limita las peticiones por minuto: ante un 429 espera lo que pide (o 8/16/32 s) y reintenta.
+  let res: Response | null = null;
+  for (let intento = 0; ; intento++) {
+    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY! },
+      body: cuerpo,
+    });
+    if ((res.status !== 429 && res.status !== 503) || intento >= 3) break;
+    const txt = await res.text();
+    const pide = Number(/"retryDelay":\s*"(\d+)/.exec(txt)?.[1]);
+    await new Promise((r) => setTimeout(r, Math.min(60, pide || 8 * 2 ** intento) * 1000));
+  }
   if (!res.ok) throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 200)}`);
   const j = await res.json();
   const parte = j.candidates?.[0]?.content?.parts?.find((x: { inlineData?: { data: string } }) => x.inlineData?.data);
