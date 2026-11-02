@@ -109,14 +109,37 @@ export default function PropuestaC() {
 
       <section className="ab-reel" aria-label="Storyboard de muestra">
         <p className="ab-index ab-index-in"><span>02</span> Nace en la niebla · cuatro tomas</p>
-        <div className="ab-tiles">
-          {CUADROS.map((c, i) => (
-            <figure key={c.id} className="ab-tile" style={{ ["--i" as string]: i }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={c.img} alt={c.alt} loading="lazy" />
-              <figcaption><b>{c.id}</b> {c.vo}</figcaption>
-            </figure>
-          ))}
+        <div className="ab-editor">
+          <div className="ab-monitor">
+            {CUADROS.map((c, i) => (
+              <figure key={c.id} className="ab-cut" style={{ ["--i" as string]: i }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={c.img} alt={c.alt} loading="lazy" />
+                <figcaption>
+                  <span className="ab-cut-id">{c.id}</span>
+                  <span className="ab-cut-vo">{c.vo}</span>
+                  <span className="ab-cut-meta">{c.plano} · {c.lente}</span>
+                </figcaption>
+              </figure>
+            ))}
+            <span className="ab-safe" aria-hidden />
+            <span className="ab-mon-tag"><i className="ab-rec" /> PREVIEW · <Timecode /></span>
+          </div>
+          <ol className="ab-shots">
+            {CUADROS.map((c, i) => (
+              <li key={c.id} style={{ ["--i" as string]: i }}>
+                <span className="ab-thumb">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={c.img} alt="" loading="lazy" />
+                </span>
+                <span className="ab-shot-txt"><b>{c.id} · {c.plano}</b><small>{c.escena} · {c.lente}</small></span>
+              </li>
+            ))}
+          </ol>
+          <div className="ab-track" aria-hidden>
+            {CUADROS.map((c, i) => <span key={c.id} style={{ ["--i" as string]: i }}>{c.id}</span>)}
+            <i className="ab-playhead" />
+          </div>
         </div>
       </section>
 
