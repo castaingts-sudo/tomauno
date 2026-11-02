@@ -124,6 +124,7 @@ export interface Paquete {
   presupuesto: { moneda: string; items: PresupuestoItem[]; total: string; notas: string };
   postproduccion: { edicion: string; color: string; audio: string; graficos: string; entregables: string[] };
   checklist: string[];
+  preguntas?: string[]; // dudas para el cliente/productor; salen en el link de revisión
 }
 
 export interface Proyecto {

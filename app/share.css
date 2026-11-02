@@ -197,3 +197,5 @@ html, body { overflow-x: hidden; }
 .tu-h2 h2 { font-size: clamp(26px, 3.4vw, 38px); letter-spacing: -0.005em; }
 .tu-loc-name { font-family: var(--f-serif); font-weight: 400; font-size: 24px; }
 .tu-brand i { border-radius: 4px; }
+.rv-preguntas h2 { margin: 6px 0 10px; }
+.rv-preguntas ol { margin: 0 0 14px; padding-left: 22px; display: grid; gap: 8px; line-height: 1.5; }

@@ -85,6 +85,15 @@ export default async function RevisionPage({ params }: { params: Promise<{ id: s
         </section>
       )}
 
+      {!!rev.preguntas?.length && (
+        <section className="rv-scene rv-preguntas" id="por-confirmar">
+          <span className="kicker">Por confirmar con producción</span>
+          <h2>Nos faltan estos datos para cerrar el plan</h2>
+          <ol>{rev.preguntas.map((q) => <li key={q}>{q}</li>)}</ol>
+          <ComentarEscena id={id} escena={0} comentarios={comentarios.filter((c) => c.escena === 0)} etiqueta="✍ Responder aquí" />
+        </section>
+      )}
+
       {total !== null && total > 0 && (
         <nav className="rv-timeline" aria-label="Línea de tiempo del video">
           <div className="rv-track">

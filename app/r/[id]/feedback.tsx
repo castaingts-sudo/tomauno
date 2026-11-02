@@ -52,7 +52,7 @@ function Lista({ comentarios }: { comentarios: Comentario[] }) {
   );
 }
 
-export function ComentarEscena({ id, escena, comentarios }: { id: string; escena: number; comentarios: Comentario[] }) {
+export function ComentarEscena({ id, escena, comentarios, etiqueta }: { id: string; escena: number; comentarios: Comentario[]; etiqueta?: string }) {
   const router = useRouter();
   const [nombre, setNombre] = useNombre();
   const [abierto, setAbierto] = useState(false);
@@ -82,7 +82,7 @@ export function ComentarEscena({ id, escena, comentarios }: { id: string; escena
       {abierto ? (
         <form onSubmit={submit} className="rv-form">
           <input placeholder="Tu nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} />
-          <textarea autoFocus rows={3} placeholder="¿Qué cambiarías en esta escena?" value={texto} onChange={(e) => setTexto(e.target.value)} required />
+          <textarea autoFocus rows={3} placeholder={escena === 0 ? "Tus respuestas (puedes contestar todo junto)" : "¿Qué cambiarías en esta escena?"} value={texto} onChange={(e) => setTexto(e.target.value)} required />
           <div className="rv-row">
             <button type="submit" className="rv-btn primary" disabled={enviando}>{enviando ? "Enviando…" : "Enviar comentario"}</button>
             <button type="button" className="rv-btn" onClick={() => setAbierto(false)}>Cancelar</button>
@@ -90,7 +90,7 @@ export function ComentarEscena({ id, escena, comentarios }: { id: string; escena
           {error && <p className="rv-error">{error}</p>}
         </form>
       ) : (
-        <button className="rv-btn ghost" onClick={() => setAbierto(true)}>💬 Comentar esta escena</button>
+        <button className="rv-btn ghost" onClick={() => setAbierto(true)}>{etiqueta || "💬 Comentar esta escena"}</button>
       )}
     </div>
   );

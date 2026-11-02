@@ -33,6 +33,7 @@ export interface Revision {
   formato: string;
   fechaRodaje?: string;
   actualizado: string;
+  preguntas?: string[];
   escenas: EscenaCliente[];
 }
 
@@ -57,6 +58,7 @@ export function armarRevision(p: Paquete, id: string, fechaRodaje?: string): Rev
     formato: p.resumen.formato,
     fechaRodaje,
     actualizado: new Date().toISOString(),
+    preguntas: p.preguntas?.filter((q) => q.trim()),
     escenas: p.guionAudiovisual.map((e) => ({
       ...e,
       paneles: p.storyboard

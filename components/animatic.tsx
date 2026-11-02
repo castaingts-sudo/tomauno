@@ -70,25 +70,39 @@ export function Animatic({ p, onClose }: { p: Paquete; onClose: () => void }) {
 
   useEffect(() => { if (t >= total) setPlay(false); }, [t, total]);
 
-  // Voz en off: se lee al entrar a cada escena.
+  // Voz en off: al entrar a cada escena suena la voz neuronal (/api/voz); si falla, la del navegador.
+  const audio = useRef<HTMLAudioElement | null>(null);
+  const callar = () => { audio.current?.pause(); audio.current = null; window.speechSynthesis?.cancel(); };
   useEffect(() => {
-    const ss = typeof window !== "undefined" ? window.speechSynthesis : null;
-    if (!ss) return;
-    if (!play || !voz) { ss.cancel(); escenaHablada.current = null; return; }
+    if (typeof window === "undefined") return;
+    if (!play || !voz) { callar(); escenaHablada.current = null; return; }
     const e = actual?.e;
     if (!e || escenaHablada.current === e.numero) return;
     escenaHablada.current = e.numero;
-    ss.cancel();
+    callar();
     if (!e.vozEnOff) return;
-    const u = new SpeechSynthesisUtterance(e.vozEnOff.replace(/^\s*(VO|VOZ EN OFF|TESTIMONIAL)[^:]*:\s*/i, ""));
-    u.lang = "es-MX";
-    const v = ss.getVoices().find((x) => x.lang === "es-MX") || ss.getVoices().find((x) => x.lang.startsWith("es"));
-    if (v) u.voice = v;
-    u.rate = 1.02;
-    ss.speak(u);
+    const navegador = () => {
+      const ss = window.speechSynthesis;
+      if (!ss || escenaHablada.current !== e.numero) return;
+      const u = new SpeechSynthesisUtterance(e.vozEnOff!.replace(/^\s*(VO|VOZ EN OFF|TESTIMONIAL)[^:]*:\s*/i, ""));
+      u.lang = "es-MX";
+      const v = ss.getVoices().find((x) => x.lang === "es-MX") || ss.getVoices().find((x) => x.lang.startsWith("es"));
+      if (v) u.voice = v;
+      ss.speak(u);
+    };
+    const a = new Audio(`/api/voz?t=${encodeURIComponent(e.vozEnOff)}`);
+    audio.current = a;
+    a.onerror = navegador;
+    a.play().catch(() => { if (audio.current === a) navegador(); });
   }, [actual?.e, play, voz]);
 
-  useEffect(() => () => window.speechSynthesis?.cancel(), []);
+  useEffect(() => () => callar(), []);
+
+  // Precarga la voz de todas las escenas para que no haya espera al llegar a cada una.
+  useEffect(() => {
+    const textos = [...new Set(pista.map((x) => x.e?.vozEnOff).filter(Boolean))] as string[];
+    textos.forEach((t) => { const a = new Audio(); a.preload = "auto"; a.src = `/api/voz?t=${encodeURIComponent(t)}`; });
+  }, [pista]);
 
   const ir = (n: number) => {
     const k = Math.min(Math.max(n, 0), pista.length - 1);
