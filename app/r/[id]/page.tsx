@@ -4,6 +4,7 @@ import { Countdown, ThemeToggle } from "@/components/share-ui";
 import { ID_RE, segundos, tc, type Comentario, type RevisionGuardada } from "@/lib/share";
 import { listJson, readJson } from "@/lib/store";
 import { Aprobacion, ComentarEscena } from "./feedback";
+import { Tablero, type CuadroCliente } from "./tablero";
 import { AnimaticCliente } from "@/components/animatic";
 import "../../share.css";
 
@@ -32,6 +33,18 @@ export default async function RevisionPage({ params }: { params: Promise<{ id: s
   const { rev, comentarios } = data;
 
   // Código de tiempo acumulado por escena, si las duraciones se pueden leer.
+  const cuadros: CuadroCliente[] = rev.escenas.flatMap((e) =>
+    e.paneles.map((f) => ({
+      planoId: f.planoId,
+      src: f.imagen || (f.svg ? svgSrc(f.svg) : undefined),
+      descripcion: f.descripcion,
+      tipoPlano: f.tipoPlano,
+      movimiento: f.movimiento,
+      escena: e.numero,
+      encabezado: e.encabezado,
+      vozEnOff: f.vozEnOff || e.vozEnOff,
+    })),
+  );
   const durs = rev.escenas.map((e) => segundos(e.duracion));
   const total = durs.every((d) => d !== null) ? durs.reduce<number>((s, d) => s + (d ?? 0), 0) : null;
   let t = 0;
@@ -122,21 +135,7 @@ export default async function RevisionPage({ params }: { params: Promise<{ id: s
               </div>
             </div>
 
-            {e.paneles.length > 0 && (
-              <div className="rv-board">
-                {e.paneles.map((f) => (
-                  <figure key={f.planoId}>
-                    <div className="vf">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      {f.imagen || f.svg ? <img src={f.imagen || svgSrc(f.svg!)} alt={f.descripcion} loading="lazy" /> : <div className="vf-empty">Dibujo en proceso</div>}
-                      <span className="vf-tag">{f.planoId}</span>
-                      {f.tipoPlano && <span className="vf-meta"><span>{f.tipoPlano}</span><span>{f.movimiento}</span></span>}
-                    </div>
-                    <figcaption>{f.descripcion}</figcaption>
-                  </figure>
-                ))}
-              </div>
-            )}
+            <Tablero todos={cuadros} escena={e.numero} />
 
             <div className="rv-cols">
               <div>
