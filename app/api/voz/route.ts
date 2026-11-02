@@ -16,6 +16,6 @@ export async function GET(req: Request) {
     return new Response(data as BodyInit, { headers: { "Content-Type": "audio/mpeg", "Cache-Control": "public, max-age=31536000, immutable" } });
   } catch (err) {
     console.error("voz", err);
-    return new Response("No se pudo generar la voz", { status: 502 });
+    return new Response(`No se pudo generar la voz: ${String(err instanceof Error ? err.message : err).slice(0, 200)}`, { status: 502 });
   }
 }
