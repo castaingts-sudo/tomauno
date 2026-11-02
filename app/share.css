@@ -216,7 +216,7 @@ html, body { overflow-x: hidden; }
 .rv-cuadro-cam span { color: var(--muted); font-weight: 500; }
 .rv-cuadro-txt { font-size: 15px; line-height: 1.55; color: var(--text); opacity: 0.86; }
 
-.rv-visor { position: fixed; inset: 0; z-index: 100; background: rgba(4, 4, 5, 0.96); display: grid; grid-template-rows: auto 1fr auto auto; gap: 12px; padding: 14px clamp(12px, 3vw, 36px) 16px; color: #ece7dc; animation: rv-in .2s ease-out; }
+.rv-visor { position: fixed; inset: 0; z-index: 100; background: #060607; display: grid; grid-template-rows: auto 1fr auto auto; gap: 12px; padding: 14px clamp(12px, 3vw, 36px) 16px; color: #ece7dc; animation: rv-in .2s ease-out; }
 @keyframes rv-in { from { opacity: 0; } }
 .rv-visor-top { display: flex; align-items: center; gap: 14px; font: 500 12px var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: rgba(236, 231, 220, 0.7); }
 .rv-visor-top span:first-child { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
