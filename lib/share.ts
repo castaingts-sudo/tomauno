@@ -73,6 +73,9 @@ export function armarRevision(p: Paquete, id: string, fechaRodaje?: string): Rev
 
 // "8 s", "0:08", "1 min" → segundos; null si no se puede leer.
 export function segundos(d: string): number | null {
+  // "8 s (00:00-00:08)": manda la duración del inicio, no el rango entre paréntesis.
+  const lead = d.match(/^\s*(\d+(?:[.,]\d+)?)\s*(s\b|seg|min)/i);
+  if (lead) return parseFloat(lead[1].replace(",", ".")) * (/min/i.test(lead[2]) ? 60 : 1);
   const mmss = d.match(/(\d+):(\d{2})/);
   if (mmss) return +mmss[1] * 60 + +mmss[2];
   const n = parseFloat(d.replace(",", "."));
