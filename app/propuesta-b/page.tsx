@@ -12,7 +12,7 @@ const mano = Caveat({ subsets: ["latin"], weight: ["500", "700"], variable: "--n
 
 export const metadata: Metadata = { title: "Toma uno · La libreta del director", robots: { index: false } };
 
-const NOTAS = ["arranca en negro, sube con la niebla", "gimbal a la altura de ella", "foco en las manos, no en la cara", "cierre: órbita completa, logo"];
+const NOTAS = ["arranca en negro, el auto parte el reflejo", "reflejos de neón en el parabrisas", "FPV a 2 m del asfalto, sin cortes", "cierre: amanecer y logo"];
 
 export default function PropuestaB() {
   return (
@@ -60,7 +60,7 @@ export default function PropuestaB() {
       {/* Una página de guion de muestra, anotada al margen */}
       <section id="guion" className="nb-sec">
         <header className="nb-head">
-          <span className="nb-kicker">Página 1 · Nace en la niebla · Café de altura, Chiapas</span>
+          <span className="nb-kicker">Página 1 · VOLTA · La línea de luz · CDMX de noche</span>
           <h2>Un guion que ya trae <em>las notas del director.</em></h2>
         </header>
         <article className="nb-page">

@@ -29,7 +29,7 @@ export default function Landing() {
           <span>Toma uno presenta</span>
           <span className="ld-rec"><i /> REC <Timecode /></span>
         </div>
-        <div className="ld-scope" aria-label="Storyboard de muestra: Nace en la niebla">
+        <div className="ld-scope" aria-label="Storyboard de muestra: VOLTA · La línea de luz">
           {CUADROS.map((c, i) => (
             <figure key={c.id} className="ld-shot" style={{ ["--i" as string]: i }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -56,7 +56,7 @@ export default function Landing() {
             </div>
           </div>
         </div>
-        <p className="ld-credit">Muestra: <b>Nace en la niebla</b> · Café de altura, Chiapas · 30 s · Storyboard generado en Toma uno</p>
+        <p className="ld-credit">Muestra: <b>VOLTA · La línea de luz</b> · Spot de auto eléctrico, CDMX de noche · 30 s · Storyboard generado en Toma uno</p>
       </section>
 
       <section className="ld-manifesto">

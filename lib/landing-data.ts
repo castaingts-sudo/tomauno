@@ -2,12 +2,12 @@ import { PLANES, planDe, precioTexto } from "./planes";
 
 // Contenido de la portada (lo comparten las propuestas de diseño).
 
-// Dibujos reales hechos por el estudio (proyecto de muestra "Café de altura").
+// Dibujos reales hechos por el estudio (proyecto de muestra "VOLTA · La línea de luz", spot nocturno en CDMX).
 export const CUADROS = [
-  { id: "1A", plano: "Gran plano general aéreo", lente: "24 mm · Dron", escena: "Ext. Sierra y cafetal · Amanecer", vo: "Antes del café, está la niebla.", img: "/api/img/storyboard/JhSnNbIg5snLyw-1A.png", alt: "Vista aérea de la sierra con niebla y un camino hacia la finca" },
-  { id: "1B", plano: "Plano medio en gimbal", lente: "35 mm · Cámara A", escena: "Ext. Cafetal · Mañana", vo: "Y alguien que la camina todos los días.", img: "/api/img/storyboard/EQcJ7Ka9Yg-bbA-1B.png", alt: "Productora y su hijo caminan entre los cafetos" },
-  { id: "2A", plano: "Primer plano", lente: "85 mm · Cámara B", escena: "Ext. Patio de secado · Mañana", vo: "Cada grano pasa por sus manos.", img: "/api/img/storyboard/d8YhmVaIyKatzQ-2A.png", alt: "Primer plano de la productora con granos de café en la mano" },
-  { id: "3A", plano: "Órbita de dron", lente: "24 mm · Dron", escena: "Ext. Casa de la finca · Atardecer", vo: "Nace en la niebla. Llega a tu taza.", img: "/api/img/storyboard/HXPkpebjrtwN2w-3A.png", alt: "Órbita de dron sobre la casa de la finca y el patio de secado" },
+  { id: "1B", plano: "Gran general aéreo cenital", lente: "24 mm · Dron Inspire 3", escena: "Ext. Paseo de la Reforma · Noche, lluvia", vo: "La ciudad nunca se apaga.", img: "/api/img/storyboard/5qDDlJQuTDG3AA-1B.png", alt: "Vista cenital de Reforma mojada con el auto cruzando en diagonal" },
+  { id: "2C", plano: "Primer plano", lente: "35 mm · Alexa Mini LF", escena: "Int. VOLTA en movimiento · Noche", vo: "De noche, la escucho.", img: "/api/img/storyboard/F9ksIxVrHkyt_A-2C.png", alt: "La conductora a través del parabrisas mojado, con reflejos de neón" },
+  { id: "3A", plano: "Persecución FPV", lente: "12 mm · Dron FPV", escena: "Ext. Torres de cristal · Noche", vo: "Cada línea.", img: "/api/img/storyboard/JUiXo6BcNytCSQ-3A.png", alt: "Dron FPV a baja altura detrás del auto entre torres de cristal" },
+  { id: "6A", plano: "Gran general aéreo", lente: "18 mm · Dron Inspire 3", escena: "Ext. Mirador poniente · Amanecer", vo: "VOLTA. Diseñado para avanzar.", img: "/api/img/storyboard/rWBfaUCPQSnTjw-6A.png", alt: "Vista aérea del mirador sobre la ciudad al amanecer" },
 ];
 
 export const ENTREGA = [

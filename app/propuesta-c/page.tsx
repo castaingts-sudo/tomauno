@@ -108,7 +108,7 @@ export default function PropuestaC() {
       </section>
 
       <section className="ab-reel" aria-label="Storyboard de muestra">
-        <p className="ab-index ab-index-in"><span>02</span> Nace en la niebla · cuatro tomas</p>
+        <p className="ab-index ab-index-in"><span>02</span> VOLTA · La línea de luz · cuatro tomas</p>
         <div className="ab-editor">
           <div className="ab-monitor">
             {CUADROS.map((c, i) => (
