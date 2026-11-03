@@ -5,6 +5,7 @@ import { Countdown, ProgresoTomas, ThemeToggle, TomaCheck } from "@/components/s
 import { tomasDe } from "@/lib/equipo";
 import { materialDe, porConfirmar, type HojaGuardada, type TomaHoja } from "@/lib/hoja";
 import { ConfirmarEquipo } from "@/components/confirmar-equipo";
+import { AnimaticCliente } from "@/components/animatic";
 import { ID_RE, segundos, tc } from "@/lib/share";
 import { readJson } from "@/lib/store";
 import type { Operador } from "@/lib/types";
@@ -117,6 +118,15 @@ export default async function HojaPage({ params }: Params) {
             <span key={c} className="chip">{c}</span>
           ))}
         </div>
+        <AnimaticCliente
+          titulo={hoja.titulo}
+          escenas={hoja.escenas.map((e) => ({
+            ...e,
+            paneles: hoja.tomas
+              .filter((t) => t.escena === e.numero)
+              .map((t) => ({ planoId: t.id, svg: t.svg, imagen: t.imagen, descripcion: t.cuadro || t.descripcion, dialogo: "", transicion: "", tipoPlano: t.tipoPlano, movimiento: t.movimiento, vozEnOff: t.vozEnOff ?? "" })),
+          }))}
+        />
       </header>
 
       <section className="tu-call">
