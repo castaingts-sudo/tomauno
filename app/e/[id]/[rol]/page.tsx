@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Countdown, ProgresoTomas, ThemeToggle, TomaCheck } from "@/components/share-ui";
 import { tomasDe } from "@/lib/equipo";
-import { materialDe, type HojaGuardada, type TomaHoja } from "@/lib/hoja";
+import { materialDe, porConfirmar, type HojaGuardada, type TomaHoja } from "@/lib/hoja";
+import { ConfirmarEquipo } from "@/components/confirmar-equipo";
 import { ID_RE, segundos, tc } from "@/lib/share";
 import { readJson } from "@/lib/store";
 import type { Operador } from "@/lib/types";
@@ -90,6 +91,7 @@ export default async function HojaPage({ params }: Params) {
   const primero = dias[0];
   const primeraToma = primero?.items.find((i) => director || i.planos.some((pid) => ids.has(pid)));
   const material = materialDe(op.tipo, hoja.material);
+  const confirmar = porConfirmar(op, hoja.material);
   const operadores = hoja.equipo.filter((o) => o.tipo !== "director");
   const operadorDe = (t: TomaHoja) => operadores.find((o) => tomasDe(o, hoja.tomas, hoja.equipo).some((x) => x.id === t.id));
   const segTotal = mias.reduce((s, t) => s + (segundos(t.duracion) ?? 0), 0);
@@ -300,6 +302,13 @@ export default async function HojaPage({ params }: Params) {
               </a>
             ))}
           </div>
+        </>
+      )}
+
+      {confirmar.length > 0 && (
+        <>
+          <div className="tu-h2"><h2>Confirma tu equipo</h2><span>lo que llevas tú</span></div>
+          <ConfirmarEquipo id={hoja.id} rol={op.id} items={confirmar} />
         </>
       )}
 

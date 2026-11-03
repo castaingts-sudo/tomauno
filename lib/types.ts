@@ -36,6 +36,7 @@ export interface Operador {
   contacto: string;
   camara?: string; // cuerpo de cámara o modelo de dron (del catálogo o escrito)
   equipo?: string; // lentes y extras que trae
+  pide?: string; // cosas que se le piden confirmar (una por línea)
 }
 
 export interface Resumen {

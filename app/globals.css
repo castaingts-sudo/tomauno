@@ -987,3 +987,9 @@ body:has(.ab)::after { display: none; }
 .rehacer-head { display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
 .rehacer-head p { margin: 4px 0 0; max-width: 640px; }
 .rehacer .st-recursos { margin-top: 0; padding-top: 0; border-top: 0; }
+.crew-pide { display: grid; gap: 4px; margin: 8px 0; font-size: 13px; }
+.crew-pide small { opacity: 0.6; font-weight: 400; }
+.crew-pide textarea { width: 100%; resize: vertical; font: inherit; font-size: 13px; }
+.crew-conf { list-style: none; margin: 4px 0 8px; padding: 0; display: grid; gap: 3px; font-size: 13px; }
+.crew-conf li.llevo { color: #6fd39a; }
+.crew-conf li.no { color: #ff9a80; }

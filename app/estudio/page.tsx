@@ -575,8 +575,14 @@ function LinksEquipo({ proyecto, onChange }: { proyecto: Proyecto; onChange: (p:
   const [guardando, setGuardando] = useState(false);
   const [msg, setMsg] = useState("");
   const base = proyecto.equipoShare && typeof window !== "undefined" ? `${window.location.origin}/e/${proyecto.equipoShare.id}` : "";
-  const editar = (id: string, k: "nombre" | "contacto" | "equipo" | "camara", v: string) =>
+  const editar = (id: string, k: "nombre" | "contacto" | "equipo" | "camara" | "pide", v: string) =>
     onChange({ ...proyecto, brief: { ...proyecto.brief, equipoRodaje: equipo.map((o) => (o.id === id ? { ...o, [k]: v } : o)) } });
+  // Respuestas del equipo a "confirma tu equipo".
+  const [conf, setConf] = useState<Record<string, Record<string, { estado: "llevo" | "no"; alternativa?: string }>>>({});
+  useEffect(() => {
+    if (!abierto || !proyecto.equipoShare) return;
+    fetch(`/api/equipo/${proyecto.equipoShare.id}/confirmar`).then((r) => r.json()).then(setConf).catch(() => {});
+  }, [abierto, proyecto.equipoShare]);
 
   async function guardar() {
     setGuardando(true);
@@ -645,6 +651,17 @@ function LinksEquipo({ proyecto, onChange }: { proyecto: Proyecto; onChange: (p:
                     )}
                   </div>
                 </div>
+                <label className="crew-pide">
+                  <span>Pedirle que confirme <small>(uno por línea; sale en su hoja junto con el equipo que el plan dice que lleva)</small></span>
+                  <textarea rows={2} value={o.pide ?? ""} onChange={(e) => editar(o.id, "pide", e.target.value)} placeholder="Ej.: Lente Sony 85 mm para la Cámara A" />
+                </label>
+                {conf[o.id] && Object.keys(conf[o.id]).length > 0 && (
+                  <ul className="crew-conf">
+                    {Object.entries(conf[o.id]).map(([item, r]) => (
+                      <li key={item} className={r.estado}>{r.estado === "llevo" ? "✓" : "✗"} {item}{r.alternativa ? ` → ${r.alternativa}` : ""}</li>
+                    ))}
+                  </ul>
+                )}
                 {url && (
                   <div className="share-actions">
                     <a className="btn" href={url} target="_blank" rel="noreferrer">Abrir</a>

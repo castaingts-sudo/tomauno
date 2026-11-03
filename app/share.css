@@ -237,3 +237,19 @@ html, body { overflow-x: hidden; }
 .rv-visor-tira img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .rv-visor-tira span { position: absolute; left: 4px; bottom: 3px; font: 700 9px var(--f-mono); color: #fff; background: rgba(0,0,0,0.6); padding: 1px 4px; border-radius: 3px; }
 @media (max-width: 640px) { .rv-visor-nav { width: 38px; height: 52px; font-size: 28px; } .rv-visor-tira button { width: 72px; } }
+
+/* Confirmar equipo en la hoja de llamado */
+.tu-confirma-nota { margin: 0 0 12px; font-size: 14px; opacity: 0.8; }
+.tu-confirma-nota b { float: right; }
+.tu-confirma ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.tu-confirma li { border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 10px 12px; }
+.tu-confirma li.ok-llevo { border-color: rgba(80, 200, 120, 0.5); }
+.tu-confirma li.ok-no { border-color: rgba(255, 120, 90, 0.55); }
+.tu-confirma-item { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.tu-confirma-item em { font-style: normal; color: #ffc53d; }
+.tu-confirma-btns { display: flex; gap: 6px; }
+.tu-confirma button { font: inherit; font-size: 13px; padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.2); background: transparent; color: inherit; cursor: pointer; }
+.tu-confirma button.on { background: rgba(80, 200, 120, 0.2); border-color: rgba(80, 200, 120, 0.7); }
+.tu-confirma button.on.no { background: rgba(255, 120, 90, 0.18); border-color: rgba(255, 120, 90, 0.7); }
+.tu-confirma-alt { display: flex; gap: 6px; margin-top: 8px; }
+.tu-confirma-alt input { flex: 1; min-width: 0; font: inherit; font-size: 14px; padding: 7px 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.25); color: inherit; }
