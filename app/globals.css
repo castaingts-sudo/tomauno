@@ -962,3 +962,9 @@ form > button { font-size: 12.5px; padding: 15px; }
 .lb-sec-head h2 { font-size: clamp(30px, 3vw, 42px); letter-spacing: -0.01em; }
 body:has(.nb)::after { display: none; }
 body:has(.ab)::after { display: none; }
+
+/* Preguntas para el cliente en Compartir */
+.share-preguntas { display: grid; gap: 6px; margin: 4px 0 12px; }
+.share-preguntas > span { font-size: 13px; font-weight: 600; }
+.share-preguntas > span small { font-weight: 400; opacity: 0.65; }
+.share-preguntas textarea { width: 100%; resize: vertical; font: inherit; font-size: 14px; line-height: 1.5; }

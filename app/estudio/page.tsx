@@ -540,6 +540,16 @@ function Resultado({ proyecto, tab, setTab, demo, onChange, dibujando, onRedibuj
                     {shareMsg && <p className="muted">{shareMsg}</p>}
                   </div>
                 </div>
+                <label className="share-preguntas">
+                  <span>Preguntas para el cliente o la producción <small>(una por línea; salen en el link como “Por confirmar” y ahí mismo las pueden responder)</small></span>
+                  <textarea
+                    rows={3}
+                    value={(proyecto.paquete.preguntas ?? []).join("\n")}
+                    placeholder={"¿Cuántas personas salen a cuadro?\n¿A qué hora podemos entrar a la locación?"}
+                    onChange={(e) => onChange({ ...proyecto, paquete: { ...proyecto.paquete, preguntas: e.target.value.split("\n") } })}
+                  />
+                  {proyecto.share && <small className="muted">Después de editar, toca “Actualizar link” para que el cliente las vea.</small>}
+                </label>
                 <div className="share-actions">
                   <button className="primary" onClick={compartir} disabled={compartiendo}>
                     {compartiendo ? "Guardando…" : proyecto.share ? "Actualizar link" : "🔗 Compartir con cliente"}
