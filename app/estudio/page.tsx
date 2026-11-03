@@ -602,7 +602,8 @@ function LinksEquipo({ proyecto, onChange }: { proyecto: Proyecto; onChange: (p:
   const texto = (o: Operador, url: string) =>
     `Hola${o.nombre ? ` ${o.nombre.split(" ")[0]}` : ""}, esta es tu hoja de llamado (${o.rol}) para "${proyecto.paquete.resumen.titulo}": ${url}`;
   const wa = (o: Operador, url: string) => {
-    const tel = o.contacto.replace(/\D/g, "");
+    let tel = o.contacto.replace(/\D/g, "");
+    if (tel.length === 10) tel = `52${tel}`; // número de México sin lada de país
     return `https://wa.me/${tel.length >= 8 ? tel : ""}?text=${encodeURIComponent(texto(o, url))}`;
   };
 

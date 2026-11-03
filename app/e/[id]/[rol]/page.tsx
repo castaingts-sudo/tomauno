@@ -44,7 +44,7 @@ function Persona({ o, yo }: { o: Operador; yo: boolean }) {
           {esTel ? (
             <>
               <a className="tu-btn" href={`tel:${tel}`}>📞 Llamar</a>
-              <a className="tu-btn" href={`https://wa.me/${tel.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">WhatsApp</a>
+              <a className="tu-btn" href={`https://wa.me/${tel.replace(/\D/g, "").replace(/^(\d{10})$/, "52$1")}`} target="_blank" rel="noreferrer">WhatsApp</a>
             </>
           ) : (
             <span className="tu-gear">{o.contacto}</span>
