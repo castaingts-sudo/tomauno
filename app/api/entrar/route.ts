@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { cuentaDe, listarAccesos } from "@/lib/acceso";
+import { cuentaDe, leerAcceso, listarAccesos } from "@/lib/acceso";
 import { enviarCorreo, hayCorreo, plantilla } from "@/lib/correo";
 import { readJson, StoreNotConfigured, writeJson } from "@/lib/store";
 
@@ -38,4 +38,13 @@ export async function GET(req: Request) {
   if (!e || e.usado || e.vence < new Date().toISOString()) return Response.json({ error: "Ese link ya se usó o venció. Pide otro." }, { status: 410 });
   await writeJson(`entradas/${id}.json`, { ...e, usado: true });
   return Response.json({ token: e.token, email: e.email });
+}
+
+// Pasar la sesión a otro dominio (p. ej. de tomauno-swart.vercel.app a www.toma1.com.mx): link de un solo uso, 5 minutos.
+export async function PUT(req: Request) {
+  const a = await leerAcceso(req.headers.get("x-toma-acceso") || "");
+  if (!a) return Response.json({ error: "Sesión no válida." }, { status: 401 });
+  const id = randomBytes(24).toString("base64url");
+  await writeJson(`entradas/${id}.json`, { token: a.token, email: a.email, vence: new Date(Date.now() + 5 * 60_000).toISOString() } satisfies Entrada);
+  return Response.json({ id });
 }

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { claveAdmin, guardarAdmin, guardarToken, tokenAcceso } from "@/lib/acceso-cliente";
 
+const SITIO = "https://www.toma1.com.mx";
+
 interface Estado { token: string; plan: string; mensual: boolean; tomas: number; usadas: number; restantes: number; activo: boolean; email: string }
 
 export function Acceso() {
@@ -18,16 +20,21 @@ export function Acceso() {
   const [aviso, setAviso] = useState("");
   const [codigo, setCodigo] = useState("");
   const [error, setError] = useState("");
+  const [hayMail, setHayMail] = useState(false);
+  const [viejo, setViejo] = useState(false);
+  const [pasando, setPasando] = useState(false);
 
   async function consultar(qs: string, cabAdmin?: string) {
     const r = await fetch(`/api/acceso?${qs}`, { headers: cabAdmin ? { "x-toma-admin": cabAdmin } : {} });
     const j = await r.json().catch(() => ({}));
     setCobro(Boolean(j.cobro));
+    setHayMail(Boolean(j.correo));
     return { ok: r.ok, j };
   }
 
   useEffect(() => {
     (async () => {
+      setViejo(window.location.hostname.endsWith(".vercel.app"));
       const url = new URL(window.location.href);
       const pago = url.searchParams.get("pago");
       const entrada = url.searchParams.get("entrar");
@@ -91,14 +98,26 @@ export function Acceso() {
     setError("Ese código no existe.");
   }
 
+  // El estudio vive en www.toma1.com.mx: desde la dirección vieja se pasa la sesión con un link de un solo uso.
+  async function pasarADominio() {
+    setPasando(true);
+    const r = await fetch("/api/entrar", { method: "PUT", headers: { "x-toma-acceso": tokenAcceso() } });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok && j.id) window.location.href = `${SITIO}/estudio?entrar=${j.id}`;
+    else { setPasando(false); setError(j.error || "No se pudo pasar la sesión."); setAbierto(true); }
+  }
+
   if (admin) return <Link className="acc-chip admin" href="/admin">★ Admin</Link>;
   if (!cobro && !acc) return null;
 
   return (
     <div className="acc">
       <button type="button" className={`acc-chip${acc && acc.restantes > 0 ? "" : " vacio"}`} onClick={() => setAbierto(!abierto)}>
-        {acc ? `${acc.restantes} tomas` : "Elegir plan"}
+        {acc ? `${acc.restantes} tomas` : "Iniciar sesión"}
       </button>
+      {viejo && acc && (
+        <button type="button" className="acc-chip" onClick={pasarADominio} disabled={pasando}>{pasando ? "Abriendo…" : "Abrir en toma1.com.mx →"}</button>
+      )}
       {abierto && (
         <div className="acc-panel" role="dialog">
           {aviso && <p className="acc-aviso">{aviso}</p>}
@@ -119,24 +138,32 @@ export function Acceso() {
             </>
           ) : (
             <>
-              <b className="acc-plan">Elige un plan para generar</b>
-              <p className="acc-dato">Pagas por proyecto o por mes, según las tomas que necesites.</p>
-              <Link className="btn primary" href="/#planes">Ver planes</Link>
-              <span className="lb-lab acc-sep">¿Ya pagaste?</span>
-              {enviado ? (
+              <b className="acc-plan">Inicia sesión</b>
+              <p className="acc-dato">Entra con tu código de acceso{hayMail ? " o con tu correo de compra" : ""} y aparecen tus proyectos en este dispositivo.</p>
+              <form onSubmit={entrar} className="acc-form">
+                <input value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="Código de acceso" aria-label="Código de acceso" autoComplete="current-password" />
+                <button type="submit">Entrar</button>
+              </form>
+              {hayMail && (enviado ? (
                 <p className="acc-aviso">Si {correo} tiene un plan, te llegó un link para entrar. Revisa también spam.</p>
               ) : (
                 <form onSubmit={pedirLink} className="acc-form">
                   <input type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} placeholder="Tu correo de compra" aria-label="Correo" required />
                   <button type="submit" disabled={mandando}>{mandando ? "…" : "Enviar link"}</button>
                 </form>
-              )}
+              ))}
+              <span className="lb-lab acc-sep">¿Aún no tienes plan?</span>
+              <p className="acc-dato">Pagas por proyecto o por mes, según las tomas que necesites.</p>
+              <Link className="btn primary" href="/#planes">Ver planes</Link>
             </>
           )}
-          <form onSubmit={entrar} className="acc-form">
-            <input value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder={acc ? "Otro código de acceso" : "Tengo un código de acceso"} aria-label="Código de acceso" />
-            <button type="submit">Entrar</button>
-          </form>
+          {acc && (
+            <form onSubmit={entrar} className="acc-form">
+              <input value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="Entrar con otro código" aria-label="Código de acceso" />
+              <button type="submit">Entrar</button>
+            </form>
+          )}
+          {acc && <button type="button" className="acc-salir" onClick={() => { guardarToken(""); window.location.reload(); }}>Cerrar sesión</button>}
           {error && <small className="acc-err">{error}</small>}
         </div>
       )}
