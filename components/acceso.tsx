@@ -41,6 +41,7 @@ export function Acceso() {
   const [listo, setListo] = useState("");
   const [seguroSalir, setSeguroSalir] = useState(false);
   const [crear, setCrear] = useState(false);
+  const [restablecer, setRestablecer] = useState(false);
 
   async function consultar(qs: string, cabAdmin?: string) {
     const r = await fetch(`/api/acceso?${qs}`, { headers: cabAdmin ? { "x-toma-admin": cabAdmin } : {} });
@@ -62,13 +63,16 @@ export function Acceso() {
         if (!tokenAcceso()) { setCrear(true); setAbierto(true); }
       }
       if (entrada) {
+        const paraClave = url.searchParams.get("clave") === "1";
         url.searchParams.delete("entrar");
+        url.searchParams.delete("clave");
         window.history.replaceState(null, "", url.pathname + url.search);
         const r = await fetch(`/api/entrar?id=${encodeURIComponent(entrada)}`);
         const j = await r.json().catch(() => ({}));
         if (r.ok && j.token) {
           guardarToken(j.token);
-          setAviso(`Entraste como ${j.email}. Tus proyectos se están cargando.`);
+          if (paraClave) setRestablecer(true);
+          setAviso(paraClave ? `Entraste como ${j.email}. Escribe tu nueva contraseña aquí abajo.` : `Entraste como ${j.email}. Tus proyectos se están cargando.`);
         } else setAviso(j.error || "No se pudo entrar con ese link.");
         setAbierto(true);
       }
@@ -102,7 +106,7 @@ export function Acceso() {
     ev.preventDefault();
     setError("");
     setMandando(true);
-    const r = await fetch("/api/entrar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: correo.trim() }) });
+    const r = await fetch("/api/entrar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: correo.trim(), motivo: "clave" }) });
     const j = await r.json().catch(() => ({}));
     setMandando(false);
     if (r.ok) setEnviado(true);
@@ -153,6 +157,7 @@ export function Acceso() {
     if (!r.ok) { setError(j.error || "No se pudo guardar."); return; }
     setClave(""); setClave2("");
     setAcc((a) => (a ? { ...a, email: j.email, conClave: true } : a));
+    setRestablecer(false);
     setListo(`Listo. Ya puedes entrar en cualquier computadora con ${j.email} y tu contraseña.`);
   }
 
@@ -218,14 +223,14 @@ export function Acceso() {
                 <a className="btn primary" href={`/api/checkout?plan=extra&token=${encodeURIComponent(acc.token)}`}>＋ 25 tomas más · $791</a>
               )}
               {listo && <p className="acc-aviso">{listo}</p>}
-              {acc.conClave ? (
+              {acc.conClave && !restablecer ? (
                 <details>
                   <summary>Cambiar contraseña</summary>
                   {formClave()}
                 </details>
               ) : (
                 <>
-                  <span className="lb-lab acc-sep">Crea tu contraseña</span>
+                  <span className="lb-lab acc-sep">{restablecer ? "Tu nueva contraseña" : "Crea tu contraseña"}</span>
                   <p className="acc-dato">Para entrar desde cualquier computadora con tu correo y contraseña.</p>
                   {formClave()}
                 </>

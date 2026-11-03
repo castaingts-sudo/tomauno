@@ -12,7 +12,8 @@ const ID_RE = /^[A-Za-z0-9_-]{20,64}$/;
 const MAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: Request) {
-  const { email } = (await req.json().catch(() => ({}))) as { email?: string };
+  const { email, motivo } = (await req.json().catch(() => ({}))) as { email?: string; motivo?: string };
+  const clave = motivo === "clave";
   if (!email || !MAIL_RE.test(email)) return Response.json({ error: "Escribe un correo válido." }, { status: 400 });
   if (!hayCorreo()) return Response.json({ error: "El envío de correos todavía no está configurado." }, { status: 503 });
   try {
@@ -21,8 +22,11 @@ export async function POST(req: Request) {
     if (a) {
       const id = randomBytes(24).toString("base64url");
       await writeJson(`entradas/${id}.json`, { token: a.token, email: a.email, vence: new Date(Date.now() + 30 * 60_000).toISOString() } satisfies Entrada);
-      const url = `${new URL(req.url).origin}/estudio?entrar=${id}`;
-      await enviarCorreo(a.email, "Tu link para entrar a Toma uno", plantilla("Entra a tu estudio", "Toca el botón para abrir Toma uno con tus proyectos y tus tomas en este dispositivo. El link sirve una vez y vence en 30 minutos.", { texto: "Entrar al estudio", url }, "Si no lo pediste, ignora este correo."));
+      const url = `${new URL(req.url).origin}/estudio?entrar=${id}${clave ? "&clave=1" : ""}`;
+      if (clave)
+        await enviarCorreo(a.email, "Restablece tu contraseña de Toma uno", plantilla("Crea una contraseña nueva", "Pediste restablecer tu contraseña. Toca el botón: entrarás a tu estudio y ahí mismo escribes la nueva. El link sirve una vez y vence en 30 minutos.", { texto: "Crear contraseña nueva", url }, "Si no lo pediste, ignora este correo: tu contraseña no cambia."));
+      else
+        await enviarCorreo(a.email, "Tu link para entrar a Toma uno", plantilla("Entra a tu estudio", "Toca el botón para abrir Toma uno con tus proyectos y tus tomas en este dispositivo. El link sirve una vez y vence en 30 minutos.", { texto: "Entrar al estudio", url }, "Si no lo pediste, ignora este correo."));
     }
     return Response.json({ ok: true });
   } catch (err) {
