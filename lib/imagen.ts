@@ -66,10 +66,12 @@ export async function dibujar(p: Plano, c: Contexto): Promise<string> {
       headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY! },
       body: cuerpo,
     });
-    if ((res.status !== 429 && res.status !== 503) || intento >= 3) break;
+    if ((res.status !== 429 && res.status !== 503) || intento >= 1) break;
     const txt = await res.text();
+    // Sin saldo o nivel gratuito ("limit: 0", PerDay): no tiene caso esperar; se usa el boceto de inmediato.
+    if (/limit:\s*0|PerDay|FreeTier|billing/i.test(txt) && !/retryDelay/.test(txt)) { res = new Response(txt, { status: res.status }); break; }
     const pide = Number(/"retryDelay":\s*"(\d+)/.exec(txt)?.[1]);
-    await new Promise((r) => setTimeout(r, Math.min(60, pide || 8 * 2 ** intento) * 1000));
+    await new Promise((r) => setTimeout(r, Math.min(12, pide || 8) * 1000));
   }
   if (!res.ok) throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 200)}`);
   const j = await res.json();
