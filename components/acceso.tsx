@@ -27,6 +27,7 @@ export function Acceso() {
   const [clave2, setClave2] = useState("");
   const [entrando, setEntrando] = useState(false);
   const [listo, setListo] = useState("");
+  const [seguroSalir, setSeguroSalir] = useState(false);
 
   async function consultar(qs: string, cabAdmin?: string) {
     const r = await fetch(`/api/acceso?${qs}`, { headers: cabAdmin ? { "x-toma-admin": cabAdmin } : {} });
@@ -212,7 +213,13 @@ export function Acceso() {
               <Link className="btn primary" href="/#planes">Ver planes</Link>
             </>
           )}
-          {acc && <button type="button" className="acc-salir" onClick={() => { guardarToken(""); window.location.reload(); }}>Cerrar sesión</button>}
+          {acc && seguroSalir && <p className="acc-err">Aún no tienes contraseña: si sales, necesitarás tu código de acceso para volver. Crea tu contraseña arriba primero.</p>}
+          {acc && (
+            <button type="button" className="acc-salir" onClick={() => {
+              if (!acc.conClave && !seguroSalir) { setSeguroSalir(true); return; }
+              guardarToken(""); window.location.reload();
+            }}>{seguroSalir ? "Salir de todos modos" : "Cerrar sesión"}</button>
+          )}
           {error && <small className="acc-err">{error}</small>}
         </div>
       )}
