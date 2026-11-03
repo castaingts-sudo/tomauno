@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { claveAdmin, guardarAdmin, guardarToken, tokenAcceso } from "@/lib/acceso-cliente";
+import { cerrarSesion } from "@/lib/nube";
 
 const SITIO = "https://www.toma1.com.mx";
 
@@ -217,7 +218,11 @@ export function Acceso() {
           {acc && (
             <button type="button" className="acc-salir" onClick={() => {
               if (!acc.conClave && !seguroSalir) { setSeguroSalir(true); return; }
-              guardarToken(""); window.location.reload();
+              setError("");
+              cerrarSesion().then((ok) => {
+                if (ok) window.location.reload();
+                else setError("No se pudieron guardar tus proyectos en la cuenta. Revisa tu internet e intenta otra vez.");
+              });
             }}>{seguroSalir ? "Salir de todos modos" : "Cerrar sesión"}</button>
           )}
           {error && <small className="acc-err">{error}</small>}

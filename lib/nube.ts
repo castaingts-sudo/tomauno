@@ -45,3 +45,20 @@ export async function sincronizar(locales: Sincronizable[]): Promise<Sincronizab
   }
   return [...porId.values()].filter((p) => !p.borrado && p.paquete).sort((a, b) => (b.creado || "").localeCompare(a.creado || ""));
 }
+
+// Cerrar sesión: primero se aseguran en la cuenta los proyectos de este navegador; luego se borran de aquí
+// para que quien use después esta computadora no los vea. Si algo no se pudo subir, no se borra nada.
+export async function cerrarSesion(): Promise<boolean> {
+  let locales: Sincronizable[] = [];
+  try { locales = JSON.parse(localStorage.getItem("toma-uno:proyectos") || "[]"); } catch {}
+  if (hayCuenta() && locales.length) {
+    const r = await Promise.all(
+      locales.map((p) => fetch("/api/proyectos", { method: "PUT", headers: { "Content-Type": "application/json", ...cabecerasAcceso() }, body: JSON.stringify(p) }).then((x) => x.ok).catch(() => false)),
+    );
+    if (r.includes(false)) return false;
+  }
+  try {
+    for (const k of Object.keys(localStorage)) if (k.startsWith("toma-uno:") && k !== "toma-uno:tema") localStorage.removeItem(k);
+  } catch {}
+  return true;
+}
