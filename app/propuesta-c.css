@@ -173,3 +173,8 @@
   .ab-cut:first-child { opacity: 1; }
   .ab-cut, .ab-cut img, .ab-shots li, .ab-track span, .ab-playhead, .ab-light i, .ab-aspas, .ab-aspas rect, .ab-ring, .ab-scan, .ab-flare, .ab-grain, .ab-luz, .ab-ritmo i, .ab-orb { animation: none; }
 }
+
+/* Video promocional */
+.ab-video { padding: 0 clamp(18px, 4vw, 56px) clamp(80px, 10vw, 160px); max-width: 1480px; margin: 0 auto; }
+.ab-video video { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: #000; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; }
+@media (max-width: 640px) and (orientation: portrait) { .ab-video video { aspect-ratio: 9 / 16; max-height: 80vh; width: auto; max-width: 100%; margin: 0 auto; } }
