@@ -858,6 +858,8 @@ div.ed { display: block; }
 .acc-chip.vacio { border-color: var(--line-2); background: var(--panel); color: var(--text); }
 .acc-chip.admin { border-color: var(--accent); }
 .acc-panel { position: absolute; right: 0; top: calc(100% + 8px); z-index: 50; width: min(320px, 90vw); display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 14px; border: 1px solid var(--line-2); background: var(--panel-solid); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45); }
+.acc-cerrar { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); font-size: 14px; line-height: 1; cursor: pointer; }
+.acc-cerrar:hover { background: rgba(255, 255, 255, 0.08); color: inherit; }
 .acc-panel .btn { text-align: center; }
 .acc-plan { font: 600 17px var(--f-display); }
 .acc-dato { margin: 0; font-size: 13px; color: var(--muted); }

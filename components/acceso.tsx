@@ -2,7 +2,7 @@
 
 // Acceso al estudio: tomas disponibles, activación al regresar de Stripe, código para otro dispositivo y entrada del administrador.
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { claveAdmin, guardarAdmin, guardarToken, tokenAcceso } from "@/lib/acceso-cliente";
 import { cerrarSesion } from "@/lib/nube";
 
@@ -18,6 +18,17 @@ export function Acceso() {
   const [mandando, setMandando] = useState(false);
   const [acc, setAcc] = useState<Estado | null>(null);
   const [abierto, setAbierto] = useState(false);
+  const caja = useRef<HTMLDivElement>(null);
+
+  // Se cierra al tocar fuera del panel o con Esc.
+  useEffect(() => {
+    if (!abierto) return;
+    const fuera = (e: PointerEvent) => { if (caja.current && !caja.current.contains(e.target as Node)) setAbierto(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setAbierto(false); };
+    document.addEventListener("pointerdown", fuera);
+    document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("pointerdown", fuera); document.removeEventListener("keydown", esc); };
+  }, [abierto]);
   const [aviso, setAviso] = useState("");
   const [codigo, setCodigo] = useState("");
   const [error, setError] = useState("");
@@ -104,7 +115,8 @@ export function Acceso() {
     setClave("");
     const t = await consultar(`token=${encodeURIComponent(j.token)}`);
     if (t.j.acceso) setAcc(t.j.acceso);
-    setAviso(`Entraste como ${j.email}.`);
+    setAviso("");
+    setAbierto(false);
   }
 
   async function crearClave(ev: React.FormEvent) {
@@ -157,7 +169,7 @@ export function Acceso() {
   if (!cobro && !acc) return null;
 
   return (
-    <div className="acc">
+    <div className="acc" ref={caja}>
       <button type="button" className={`acc-chip${acc && acc.restantes > 0 ? "" : " vacio"}`} onClick={() => setAbierto(!abierto)}>
         {acc ? `${acc.restantes} tomas` : "Iniciar sesión"}
       </button>
@@ -166,6 +178,7 @@ export function Acceso() {
       )}
       {abierto && (
         <div className="acc-panel" role="dialog">
+          <button type="button" className="acc-cerrar" onClick={() => setAbierto(false)} aria-label="Cerrar">✕</button>
           {aviso && <p className="acc-aviso">{aviso}</p>}
           {acc ? (
             <>
