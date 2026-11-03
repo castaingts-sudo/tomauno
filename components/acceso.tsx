@@ -7,7 +7,7 @@ import { claveAdmin, guardarAdmin, guardarToken, tokenAcceso } from "@/lib/acces
 
 const SITIO = "https://www.toma1.com.mx";
 
-interface Estado { token: string; plan: string; mensual: boolean; tomas: number; usadas: number; restantes: number; activo: boolean; email: string }
+interface Estado { token: string; plan: string; mensual: boolean; tomas: number; usadas: number; restantes: number; activo: boolean; email: string; conClave?: boolean }
 
 export function Acceso() {
   const [cobro, setCobro] = useState(false);
@@ -23,6 +23,10 @@ export function Acceso() {
   const [hayMail, setHayMail] = useState(false);
   const [viejo, setViejo] = useState(false);
   const [pasando, setPasando] = useState(false);
+  const [clave, setClave] = useState("");
+  const [clave2, setClave2] = useState("");
+  const [entrando, setEntrando] = useState(false);
+  const [listo, setListo] = useState("");
 
   async function consultar(qs: string, cabAdmin?: string) {
     const r = await fetch(`/api/acceso?${qs}`, { headers: cabAdmin ? { "x-toma-admin": cabAdmin } : {} });
@@ -56,7 +60,7 @@ export function Acceso() {
         if (ok && j.acceso) {
           guardarToken(j.acceso.token);
           setAcc(j.acceso);
-          setAviso(`¡Pago recibido! Tienes ${j.acceso.restantes} tomas para tus proyectos.`);
+          setAviso(`¡Pago recibido! Tienes ${j.acceso.restantes} tomas. Crea tu contraseña para entrar desde cualquier computadora.`);
           setAbierto(true);
           return;
         }
@@ -86,6 +90,36 @@ export function Acceso() {
     else setError(j.error || "No se pudo enviar el link.");
   }
 
+  async function iniciar(ev: React.FormEvent) {
+    ev.preventDefault();
+    setError("");
+    setEntrando(true);
+    const r = await fetch("/api/sesion", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: correo.trim(), clave }) });
+    const j = await r.json().catch(() => ({}));
+    setEntrando(false);
+    if (!r.ok || !j.token) { setError(j.error || "No se pudo entrar."); return; }
+    guardarToken(j.token);
+    setClave("");
+    const t = await consultar(`token=${encodeURIComponent(j.token)}`);
+    if (t.j.acceso) setAcc(t.j.acceso);
+    setAviso(`Entraste como ${j.email}.`);
+  }
+
+  async function crearClave(ev: React.FormEvent) {
+    ev.preventDefault();
+    setError("");
+    setListo("");
+    if (clave !== clave2) { setError("Las contraseñas no coinciden."); return; }
+    setEntrando(true);
+    const r = await fetch("/api/sesion", { method: "PUT", headers: { "Content-Type": "application/json", "x-toma-acceso": tokenAcceso() }, body: JSON.stringify({ email: correo.trim(), clave }) });
+    const j = await r.json().catch(() => ({}));
+    setEntrando(false);
+    if (!r.ok) { setError(j.error || "No se pudo guardar."); return; }
+    setClave(""); setClave2("");
+    setAcc((a) => (a ? { ...a, email: j.email, conClave: true } : a));
+    setListo(`Listo. Ya puedes entrar en cualquier computadora con ${j.email} y tu contraseña.`);
+  }
+
   async function entrar(ev: React.FormEvent) {
     ev.preventDefault();
     setError("");
@@ -106,6 +140,16 @@ export function Acceso() {
     if (r.ok && j.id) window.location.href = `${SITIO}/estudio?entrar=${j.id}`;
     else { setPasando(false); setError(j.error || "No se pudo pasar la sesión."); setAbierto(true); }
   }
+
+  const formClave = () => (
+    <form onSubmit={crearClave} className="acc-login">
+      {!acc?.email && <input type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} placeholder="Tu correo" aria-label="Correo" autoComplete="username" required />}
+      {acc?.email && <input type="email" value={acc.email} readOnly aria-label="Correo" autoComplete="username" hidden />}
+      <input type="password" value={clave} onChange={(e) => setClave(e.target.value)} placeholder="Contraseña (mínimo 8)" aria-label="Contraseña nueva" autoComplete="new-password" minLength={8} required />
+      <input type="password" value={clave2} onChange={(e) => setClave2(e.target.value)} placeholder="Repite la contraseña" aria-label="Repite la contraseña" autoComplete="new-password" minLength={8} required />
+      <button type="submit" disabled={entrando}>{entrando ? "Guardando…" : "Guardar contraseña"}</button>
+    </form>
+  );
 
   if (admin) return <Link className="acc-chip admin" href="/admin">★ Admin</Link>;
   if (!cobro && !acc) return null;
@@ -129,39 +173,44 @@ export function Acceso() {
               <p className="acc-dato">{acc.usadas} de {acc.tomas} tomas usadas · quedan <b>{acc.restantes}</b></p>
               {acc.email && <p className="acc-dato">{acc.email}</p>}
               <a className="btn primary" href={`/api/checkout?plan=extra&token=${encodeURIComponent(acc.token)}`}>＋ 25 tomas más · $791</a>
-              <details>
-                <summary>Usar en otro dispositivo</summary>
-                <p className="acc-dato">Tus proyectos se guardan en tu cuenta. Pega este código en el otro equipo y aparecen ahí:</p>
-                <code className="acc-code">{acc.token}</code>
-                <button type="button" onClick={() => navigator.clipboard?.writeText(acc.token)}>Copiar código</button>
-              </details>
+              {listo && <p className="acc-aviso">{listo}</p>}
+              {acc.conClave ? (
+                <details>
+                  <summary>Cambiar contraseña</summary>
+                  {formClave()}
+                </details>
+              ) : (
+                <>
+                  <span className="lb-lab acc-sep">Crea tu contraseña</span>
+                  <p className="acc-dato">Para entrar desde cualquier computadora con tu correo y contraseña.</p>
+                  {formClave()}
+                </>
+              )}
             </>
           ) : (
             <>
               <b className="acc-plan">Inicia sesión</b>
-              <p className="acc-dato">Entra con tu código de acceso{hayMail ? " o con tu correo de compra" : ""} y aparecen tus proyectos en este dispositivo.</p>
-              <form onSubmit={entrar} className="acc-form">
-                <input value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="Código de acceso" aria-label="Código de acceso" autoComplete="current-password" />
-                <button type="submit">Entrar</button>
+              <form onSubmit={iniciar} className="acc-login">
+                <input type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} placeholder="Correo" aria-label="Correo" autoComplete="username" required />
+                <input type="password" value={clave} onChange={(e) => setClave(e.target.value)} placeholder="Contraseña" aria-label="Contraseña" autoComplete="current-password" required />
+                <button type="submit" className="primary" disabled={entrando}>{entrando ? "Entrando…" : "Entrar"}</button>
               </form>
               {hayMail && (enviado ? (
                 <p className="acc-aviso">Si {correo} tiene un plan, te llegó un link para entrar. Revisa también spam.</p>
               ) : (
-                <form onSubmit={pedirLink} className="acc-form">
-                  <input type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} placeholder="Tu correo de compra" aria-label="Correo" required />
-                  <button type="submit" disabled={mandando}>{mandando ? "…" : "Enviar link"}</button>
-                </form>
+                <button type="button" className="acc-salir" onClick={(e) => { if (correo.trim()) pedirLink(e as unknown as React.FormEvent); else setError("Escribe tu correo y te mandamos un link para entrar."); }} disabled={mandando}>¿Olvidaste tu contraseña? Te mandamos un link</button>
               ))}
+              <details>
+                <summary>Entrar con código de acceso</summary>
+                <form onSubmit={entrar} className="acc-form">
+                  <input value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="Código de acceso" aria-label="Código de acceso" />
+                  <button type="submit">Entrar</button>
+                </form>
+              </details>
               <span className="lb-lab acc-sep">¿Aún no tienes plan?</span>
               <p className="acc-dato">Pagas por proyecto o por mes, según las tomas que necesites.</p>
               <Link className="btn primary" href="/#planes">Ver planes</Link>
             </>
-          )}
-          {acc && (
-            <form onSubmit={entrar} className="acc-form">
-              <input value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="Entrar con otro código" aria-label="Código de acceso" />
-              <button type="submit">Entrar</button>
-            </form>
           )}
           {acc && <button type="button" className="acc-salir" onClick={() => { guardarToken(""); window.location.reload(); }}>Cerrar sesión</button>}
           {error && <small className="acc-err">{error}</small>}
