@@ -12,9 +12,20 @@ export interface Brief {
   lugar?: string; // ciudad o locación principal (para el clima y la luz)
   notas: string;
   equipoRodaje?: Operador[]; // quién filma: director, cámaras, piloto de dron
+  recursos?: Recursos; // con qué más cuenta la producción (gente y equipo propio)
   archivo?: string; // nombre del brief subido
   documento?: string; // texto completo del brief (Word/TXT/MD)
   pdf?: string; // brief en PDF, base64 (no se guarda en el historial)
+}
+
+export interface Recursos {
+  personas: string; // productor, sonidista, gaffer, asistentes…
+  luces: string;
+  audio: string;
+  soporte: string; // gimbal, slider, tripiés, grúa…
+  transporte: string;
+  otros: string;
+  soloLoQueTengo: boolean; // planear solo con esto; lo que falte va aparte como opcional
 }
 
 export interface Operador {

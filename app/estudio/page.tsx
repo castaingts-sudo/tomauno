@@ -7,10 +7,10 @@ import { ThemeToggle } from "@/components/share-ui";
 import { Acceso } from "@/components/acceso";
 import { borrarEnNube, sincronizar, subir } from "@/lib/nube";
 import { cabecerasAcceso } from "@/lib/acceso-cliente";
-import { NuevoProyecto, SalaControl, SelectorCamara, Tablero, cuentaTexto, diasPara, fechaCorta, svgSrc } from "@/components/estudio";
+import { NuevoProyecto, RecursosForm, SalaControl, SelectorCamara, Tablero, cuentaTexto, diasPara, fechaCorta, svgSrc } from "@/components/estudio";
 import { download, slug, toMarkdown } from "@/lib/export";
 import { Libro, moverFechas } from "@/components/libro";
-import type { Brief, Operador, Paquete, Proyecto } from "@/lib/types";
+import type { Brief, Operador, Paquete, Proyecto, Recursos } from "@/lib/types";
 
 const STORAGE_KEY = "toma-uno:proyectos";
 const BORRADOR_KEY = "toma-uno:borrador";
@@ -517,6 +517,7 @@ function Resultado({ proyecto, tab, setTab, demo, onChange, dibujando, onRedibuj
         </aside>
         <div className="lb-main">
           {edit && <p className="lb-editbar no-print">Modo edición: toca cualquier texto del guion, las tomas o el plan para corregirlo. Se guarda solo.</p>}
+          {tab === "equipo" && !demo && <RehacerPlan proyecto={proyecto} onChange={onChange} />}
           <Libro proyecto={proyecto} tab={tab} edit={edit} onChange={onChange} irA={(t) => setTab(t as Tab)} dibujando={dibujando} onRedibujar={onRedibujar} />
           <section className={tab === "compartir" ? "sec lb-sec" : "sec lb-sec hide no-print"}>
             <header className="lb-sec-head">
@@ -655,6 +656,66 @@ function LinksEquipo({ proyecto, onChange }: { proyecto: Proyecto; onChange: (p:
           })}
         </ul>
       )}
+    </div>
+  );
+}
+
+// Rehace plan, equipo, crew, locaciones y presupuesto con los recursos reales; guion y storyboard no se tocan.
+function RehacerPlan({ proyecto, onChange }: { proyecto: Proyecto; onChange: (p: Proyecto) => void }) {
+  const [abierto, setAbierto] = useState(!proyecto.brief.recursos);
+  const [recursos, setRecursos] = useState<Recursos | undefined>(proyecto.brief.recursos);
+  const [trabajando, setTrabajando] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  async function rehacer() {
+    setTrabajando(true);
+    setMsg("");
+    try {
+      const brief: Brief = { ...proyecto.brief, recursos };
+      const p = proyecto.paquete;
+      const previo = JSON.stringify({ resumen: p.resumen, guionAudiovisual: p.guionAudiovisual, guionTecnico: p.guionTecnico });
+      const res = await fetch("/api/generate", { method: "POST", headers: { "Content-Type": "application/json", ...cabecerasAcceso() }, body: JSON.stringify({ brief, etapa: 2, previo }) });
+      if (!res.ok || !res.body) throw new Error(((await res.json().catch(() => ({}))) as { error?: string }).error || `Error ${res.status}`);
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let t = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        t += dec.decode(value, { stream: true });
+      }
+      const err = t.indexOf("[[ERROR]]");
+      if (err !== -1) throw new Error(t.slice(err + 9));
+      const fin = t.lastIndexOf("[[FIN]]");
+      if (fin === -1) throw new Error("Se cortó antes de terminar. Vuelve a intentarlo.");
+      const parte = parsePaquete(t.slice(0, fin)) as Partial<Paquete>;
+      const paquete = completarPaquete({ ...p, ...parte, resumen: p.resumen, guionAudiovisual: p.guionAudiovisual, guionTecnico: p.guionTecnico, storyboard: p.storyboard });
+      onChange({ ...proyecto, brief, paquete });
+      setAbierto(false);
+      setMsg("Listo: plan, equipo, crew, locaciones y presupuesto rehechos con tus recursos. El guion y el storyboard no cambiaron.");
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : String(e));
+    } finally {
+      setTrabajando(false);
+    }
+  }
+
+  return (
+    <div className="card rehacer no-print">
+      <div className="rehacer-head">
+        <div>
+          <b>Planear con lo que tengo</b>
+          <p className="muted">Dime tu gente y tu equipo y rehago el plan de rodaje, el equipo, el crew y el presupuesto con eso. El guion y el storyboard se quedan igual. No gasta tomas.</p>
+        </div>
+        {!abierto && <button type="button" onClick={() => setAbierto(true)}>{proyecto.brief.recursos ? "Editar mis recursos" : "Poner mis recursos"}</button>}
+      </div>
+      {abierto && (
+        <>
+          <RecursosForm recursos={recursos} onChange={setRecursos} />
+          <button type="button" className="primary" onClick={rehacer} disabled={trabajando}>{trabajando ? "Rehaciendo el plan… (1 a 3 min)" : "Rehacer plan con mis recursos"}</button>
+        </>
+      )}
+      {msg && <p className="muted">{msg}</p>}
     </div>
   );
 }

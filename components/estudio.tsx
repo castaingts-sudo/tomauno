@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { CAMARAS, DRONES, fichaCamara, gearDe } from "@/lib/camaras";
 import { ajustarEquipo, equipoDe } from "@/lib/equipo";
 import { leerVivo } from "@/lib/vivo";
-import type { Brief, Operador, Proyecto } from "@/lib/types";
+import type { Brief, Operador, Proyecto, Recursos } from "@/lib/types";
 
 // El SVG se muestra como <img>, así que ningún script dentro de él se ejecuta.
 export const svgSrc = (svg: string) => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
@@ -378,6 +378,7 @@ export function NuevoProyecto({
               </span>
             </label>
             <EquipoForm equipo={equipo} dron={brief.incluirDron} onChange={(eq) => set("equipoRodaje", eq)} />
+            <RecursosForm recursos={brief.recursos} onChange={(r) => set("recursos", r)} />
           </div>
         )}
 
@@ -433,6 +434,63 @@ function Opciones({ label, valor, opciones, onChange, libre }: { label: string; 
           </button>
         ))}
         {libre && <input className="st-chip-input" style={{ width: `${Math.max(9, (opciones.includes(valor) ? 0 : valor.length) + 3)}ch` }} value={opciones.includes(valor) ? "" : valor} onChange={(e) => onChange(e.target.value)} placeholder="Otro…" aria-label={`${label}: otro`} />}
+      </div>
+    </div>
+  );
+}
+
+// Con qué más cuenta la producción: la IA planea con esto y deja aparte lo que falte.
+const K_RECURSOS = "toma-uno:recursos";
+const VACIO: Recursos = { personas: "", luces: "", audio: "", soporte: "", transporte: "", otros: "", soloLoQueTengo: true };
+const CAMPOS: [keyof Omit<Recursos, "soloLoQueTengo">, string, string][] = [
+  ["personas", "Gente", "Ej.: productor (yo), sonidista, 1 asistente de cámara, maquillista"],
+  ["luces", "Luces", "Ej.: 2 Aputure 300d con softbox, 1 tubo RGB, rebotador 5 en 1"],
+  ["audio", "Audio", "Ej.: 2 lavalier Rode inalámbricos, boom Sennheiser MKE 600, Zoom H6"],
+  ["soporte", "Soporte y movimiento", "Ej.: gimbal DJI RS 3, 2 tripiés, slider 80 cm"],
+  ["transporte", "Transporte", "Ej.: 1 camioneta para 7 personas"],
+  ["otros", "Otros", "Ej.: monitor 7\", teleprompter, baterías V-mount"],
+];
+
+export function RecursosForm({ recursos, onChange }: { recursos?: Recursos; onChange: (r: Recursos) => void }) {
+  const r = recursos ?? VACIO;
+  const [guardado, setGuardado] = useState("");
+  const [hayFijo, setHayFijo] = useState(false);
+  useEffect(() => {
+    try {
+      const fijo = localStorage.getItem(K_RECURSOS);
+      setHayFijo(Boolean(fijo));
+      // Proyecto nuevo sin recursos: se llena con "mi equipo de siempre".
+      if (fijo && !recursos) onChange({ ...VACIO, ...JSON.parse(fijo) });
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const poner = (k: keyof Recursos, v: string | boolean) => { setGuardado(""); onChange({ ...r, [k]: v }); };
+  return (
+    <div className="st-recursos">
+      <h3>¿Con qué más cuentas?</h3>
+      <p className="muted">Tu gente y tu equipo. Armo el guion técnico, el crew, el plan y el presupuesto con esto, y lo que falte lo pongo aparte como opcional.</p>
+      <div className="st-recursos-grid">
+        {CAMPOS.map(([k, t, ph]) => (
+          <label key={k} className="st-field">
+            {t}
+            <textarea rows={2} value={r[k]} onChange={(e) => poner(k, e.target.value)} placeholder={ph} />
+          </label>
+        ))}
+      </div>
+      <label className="st-toggle">
+        <input type="checkbox" checked={r.soloLoQueTengo} onChange={(e) => poner("soloLoQueTengo", e.target.checked)} />
+        <span className="st-switch" />
+        <span>
+          <b>Planear solo con lo que tengo</b>
+          <small>Si lo apagas, uso esto como base y completo con renta y contrataciones</small>
+        </span>
+      </label>
+      <div className="st-recursos-acc">
+        <button type="button" onClick={() => { try { localStorage.setItem(K_RECURSOS, JSON.stringify(r)); setHayFijo(true); setGuardado("Guardado: tus próximos proyectos empiezan con este equipo."); } catch {} }}>
+          Guardar como mi equipo de siempre
+        </button>
+        {hayFijo && !guardado && <small className="muted">Tus proyectos nuevos empiezan con tu equipo guardado.</small>}
+        {guardado && <small className="muted">{guardado}</small>}
       </div>
     </div>
   );

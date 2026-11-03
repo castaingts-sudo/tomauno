@@ -35,9 +35,20 @@ Reglas:
 - El plan de rodaje agrupa planos por locación y luz (hora dorada, etc.) para minimizar traslados, y aprovecha que los operadores filman en paralelo. Cada plano del guion técnico debe aparecer en algún "planos" del plan.
 - El crew incluye a todo el equipo de rodaje que se te da, más los roles extra que el proyecto necesite.
 - El equipo y el presupuesto se ajustan al nivel de presupuesto pedido; los montos son estimados orientativos.
+- Si se dan "Recursos de la producción" con "Planear solo con esto: sí", ese es TODO el crew y el equipo disponible además de los operadores: "crew" lista solo esas personas (más los operadores) con su función en el rodaje; "equipo" lista solo ese equipo y el de los operadores; el plan de rodaje, los movimientos de cámara, la iluminación y el audio se diseñan para resolverse con eso (p. ej. sin slider ni dolly, el movimiento se hace con gimbal o a mano; sin luces, se planea con luz natural y rebotadores). No inventes personas ni equipo como si ya los tuvieran. Si algo es realmente indispensable y falta, agrégalo al final de "equipo" o "crew" marcado "opcional · rentar/contratar" y en "presupuesto" como renglón aparte "Opcional: …". Si dice "Planear solo con esto: no", úsalo como base y completa lo que haga falta marcándolo "rentar" o "contratar".
 - El checklist son tareas concretas de preproducción antes del día de rodaje.
 - Si se adjunta un brief del cliente, es la fuente principal: respeta su concepto, mensajes clave, escaleta, textos de voz en off y testimoniales, locaciones, talento, idiomas/subtítulos, días de rodaje y entregables. Desarrolla y completa lo que falte sin contradecirlo.
 ${MANUAL_DIRECCION}`;
+
+function recursosTexto(b: Brief): string {
+  const r = b.recursos;
+  if (!r) return "";
+  const filas = ([["Personas", r.personas], ["Luces", r.luces], ["Audio", r.audio], ["Soporte y movimiento", r.soporte], ["Transporte", r.transporte], ["Otros", r.otros]] as const)
+    .filter(([, v]) => v?.trim())
+    .map(([k, v]) => `- ${k}: ${v.trim()}`);
+  if (!filas.length) return "";
+  return `\nRecursos de la producción (lo que ya tienen, además de los operadores):\n${filas.join("\n")}\nPlanear solo con esto: ${r.soloLoQueTengo ? "sí" : "no"}`;
+}
 
 export function userPrompt(b: Brief): string {
   return `Idea del video: ${b.idea}
@@ -53,7 +64,7 @@ Notas adicionales: ${b.notas || "ninguna"}
 Equipo de rodaje:
 ${equipoDe(b)
   .map((o) => `- ${o.rol}${o.nombre ? ` (${o.nombre})` : ""}${o.tipo !== "director" ? `: ${gearDe(o, true) || "equipo a definir"}${o.camara && !o.equipo?.trim() && o.tipo === "camara" ? " · lentes: recomiéndalos tú" : ""}` : ""}`)
-  .join("\n")}${
+  .join("\n")}${recursosTexto(b)}${
     b.documento ? `\n\nBrief del cliente (${b.archivo || "documento"}):\n<brief>\n${b.documento}\n</brief>` : ""
   }${b.pdf ? `\n\nEl brief del cliente (${b.archivo || "PDF"}) va adjunto como documento.` : ""}`;
 }

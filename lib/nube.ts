@@ -58,7 +58,7 @@ export async function cerrarSesion(): Promise<boolean> {
     if (r.includes(false)) return false;
   }
   try {
-    for (const k of Object.keys(localStorage)) if (k.startsWith("toma-uno:") && k !== "toma-uno:tema") localStorage.removeItem(k);
+    for (const k of Object.keys(localStorage)) if (k.startsWith("toma-uno:") && k !== "toma-uno:tema" && k !== "toma-uno:recursos") localStorage.removeItem(k);
   } catch {}
   return true;
 }
