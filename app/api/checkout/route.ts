@@ -23,7 +23,9 @@ export async function GET(req: Request) {
       success_url: `${origen}/estudio?pago={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origen}/#planes`,
       metadata,
-      ...(mensual ? { subscription_data: { metadata } } : { customer_creation: "always", payment_intent_data: { metadata, description: `Toma uno · ${plan.nombre}` } }),
+      // Una sola cuenta Stripe (Neurona Lab) para varias apps: se aclara la marca en el cobro y en el estado de cuenta.
+      custom_text: { submit: { message: "Toma uno es un servicio de Neurona Lab. En tu estado de cuenta aparecerá como NEURONA LAB* TOMA UNO." } },
+      ...(mensual ? { subscription_data: { metadata } } : { customer_creation: "always", payment_intent_data: { metadata, description: `Toma uno · ${plan.nombre}`, statement_descriptor_suffix: "TOMA UNO" } }),
       line_items: {
         0: {
           quantity: 1,
