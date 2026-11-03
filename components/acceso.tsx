@@ -40,6 +40,7 @@ export function Acceso() {
   const [entrando, setEntrando] = useState(false);
   const [listo, setListo] = useState("");
   const [seguroSalir, setSeguroSalir] = useState(false);
+  const [crear, setCrear] = useState(false);
 
   async function consultar(qs: string, cabAdmin?: string) {
     const r = await fetch(`/api/acceso?${qs}`, { headers: cabAdmin ? { "x-toma-admin": cabAdmin } : {} });
@@ -55,6 +56,11 @@ export function Acceso() {
       const url = new URL(window.location.href);
       const pago = url.searchParams.get("pago");
       const entrada = url.searchParams.get("entrar");
+      if (url.searchParams.get("gratis")) {
+        url.searchParams.delete("gratis");
+        window.history.replaceState(null, "", url.pathname + url.search);
+        if (!tokenAcceso()) { setCrear(true); setAbierto(true); }
+      }
       if (entrada) {
         url.searchParams.delete("entrar");
         window.history.replaceState(null, "", url.pathname + url.search);
@@ -117,6 +123,22 @@ export function Acceso() {
     if (t.j.acceso) setAcc(t.j.acceso);
     setAviso("");
     setAbierto(false);
+  }
+
+  async function crearCuenta(ev: React.FormEvent) {
+    ev.preventDefault();
+    setError("");
+    if (clave !== clave2) { setError("Las contraseñas no coinciden."); return; }
+    setEntrando(true);
+    const r = await fetch("/api/prueba", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: correo.trim(), clave }) });
+    const j = await r.json().catch(() => ({}));
+    setEntrando(false);
+    if (!r.ok || !j.token) { setError(j.error || "No se pudo crear la cuenta."); return; }
+    guardarToken(j.token);
+    setClave(""); setClave2(""); setCrear(false);
+    const t = await consultar(`token=${encodeURIComponent(j.token)}`);
+    if (t.j.acceso) setAcc(t.j.acceso);
+    setAviso("¡Listo! Tienes tu primer proyecto gratis de hasta 15 tomas. Toca “Nuevo proyecto” para empezar.");
   }
 
   async function crearClave(ev: React.FormEvent) {
@@ -187,7 +209,14 @@ export function Acceso() {
               <div className="acc-barra"><i style={{ width: `${acc.tomas ? (acc.usadas / acc.tomas) * 100 : 0}%` }} /></div>
               <p className="acc-dato">{acc.usadas} de {acc.tomas} tomas usadas · quedan <b>{acc.restantes}</b></p>
               {acc.email && <p className="acc-dato">{acc.email}</p>}
-              <a className="btn primary" href={`/api/checkout?plan=extra&token=${encodeURIComponent(acc.token)}`}>＋ 25 tomas más · $791</a>
+              {/gratis/i.test(acc.plan) ? (
+                <>
+                  {acc.restantes === 0 && <p className="acc-aviso">Ya usaste tu proyecto gratis. Elige un plan para seguir.</p>}
+                  <Link className="btn primary" href="/#planes">Ver planes</Link>
+                </>
+              ) : (
+                <a className="btn primary" href={`/api/checkout?plan=extra&token=${encodeURIComponent(acc.token)}`}>＋ 25 tomas más · $791</a>
+              )}
               {listo && <p className="acc-aviso">{listo}</p>}
               {acc.conClave ? (
                 <details>
@@ -204,6 +233,20 @@ export function Acceso() {
             </>
           ) : (
             <>
+              {crear ? (
+                <>
+                  <b className="acc-plan">Tu primer proyecto gratis</b>
+                  <p className="acc-dato">Crea tu cuenta y arma un proyecto de hasta 15 tomas con guion, storyboard dibujado y plan de rodaje. Sin tarjeta.</p>
+                  <form onSubmit={crearCuenta} className="acc-login">
+                    <input type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} placeholder="Correo" aria-label="Correo" autoComplete="username" required />
+                    <input type="password" value={clave} onChange={(e) => setClave(e.target.value)} placeholder="Contraseña (mínimo 8)" aria-label="Contraseña" autoComplete="new-password" minLength={8} required />
+                    <input type="password" value={clave2} onChange={(e) => setClave2(e.target.value)} placeholder="Repite la contraseña" aria-label="Repite la contraseña" autoComplete="new-password" minLength={8} required />
+                    <button type="submit" className="primary" disabled={entrando}>{entrando ? "Creando…" : "Crear cuenta gratis"}</button>
+                  </form>
+                  <button type="button" className="acc-salir" onClick={() => { setCrear(false); setError(""); }}>Ya tengo cuenta · Iniciar sesión</button>
+                </>
+              ) : (
+              <>
               <b className="acc-plan">Inicia sesión</b>
               <form onSubmit={iniciar} className="acc-login">
                 <input type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} placeholder="Correo" aria-label="Correo" autoComplete="username" required />
@@ -222,6 +265,9 @@ export function Acceso() {
                   <button type="submit">Entrar</button>
                 </form>
               </details>
+              <button type="button" className="acc-gratis" onClick={() => { setCrear(true); setError(""); }}>¿Nuevo? Crea tu cuenta y tu primer proyecto gratis →</button>
+              </>
+              )}
               <span className="lb-lab acc-sep">¿Aún no tienes plan?</span>
               <p className="acc-dato">Pagas por proyecto o por mes, según las tomas que necesites.</p>
               <Link className="btn primary" href="/#planes">Ver planes</Link>

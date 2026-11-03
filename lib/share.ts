@@ -1,4 +1,4 @@
-import type { Paquete } from "./types";
+import type { Paquete, Jornada } from "./types";
 
 // Lo que ve el cliente: solo guion audiovisual y storyboard, agrupado por escena.
 
@@ -34,6 +34,7 @@ export interface Revision {
   fechaRodaje?: string;
   actualizado: string;
   preguntas?: string[];
+  plan?: Jornada[]; // horarios y locaciones del rodaje (sin presupuesto ni equipo)
   escenas: EscenaCliente[];
 }
 
@@ -59,6 +60,7 @@ export function armarRevision(p: Paquete, id: string, fechaRodaje?: string): Rev
     fechaRodaje,
     actualizado: new Date().toISOString(),
     preguntas: p.preguntas?.filter((q) => q.trim()),
+    plan: p.planRodaje,
     escenas: p.guionAudiovisual.map((e) => ({
       ...e,
       paneles: p.storyboard

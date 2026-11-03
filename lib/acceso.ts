@@ -88,7 +88,7 @@ export function limiteDe(p: Permiso): { tomas?: number; minutos?: number } {
   if (!p.acceso) return {};
   const plan = planDe(p.acceso.plan);
   const quedan = restantes(p.acceso);
-  return { tomas: plan?.tipo === "proyecto" ? Math.min(quedan, plan.tomas) : quedan, minutos: plan?.minutos };
+  return { tomas: plan?.tipo === "proyecto" || plan?.tipo === "prueba" ? Math.min(quedan, plan.tomas) : quedan, minutos: plan?.minutos };
 }
 
 // Alta o recarga a partir de una sesión de Checkout pagada (la llaman el regreso del cliente y el webhook; es idempotente).

@@ -325,6 +325,11 @@ export default async function HojaPage({ params }: Params) {
         </>
       )}
 
+      <a className="tu-invita" href="/estudio?gratis=1">
+        <span>Esta hoja de llamado, el storyboard y el plan los armó <b>Toma uno</b>.</span>
+        <b>Crea tu primer proyecto gratis →</b>
+      </a>
+
       <footer className="tu-foot">
         Actualizado {new Date(hoja.actualizado).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" })} · Toma uno
       </footer>

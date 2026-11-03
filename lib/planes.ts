@@ -3,7 +3,7 @@
 export interface Plan {
   id: string;
   nombre: string;
-  tipo: "proyecto" | "mensual" | "extra";
+  tipo: "proyecto" | "mensual" | "extra" | "prueba";
   centavos: number;
   tomas: number; // tomas que da el plan (por mes en los mensuales)
   tope: string; // texto corto del límite
@@ -17,6 +17,7 @@ export const PLANES: Plan[] = [
   { id: "pro", nombre: "Pro", tipo: "mensual", centavos: 599100, tomas: 250, tope: "250 tomas al mes · 1 usuario" },
   { id: "estudio", nombre: "Estudio", tipo: "mensual", centavos: 1499100, tomas: 800, tope: "800 tomas al mes · equipo" },
   { id: "extra", nombre: "Paquete extra", tipo: "extra", centavos: 79100, tomas: 25, tope: "25 tomas más" },
+  { id: "prueba", nombre: "Primer proyecto gratis", tipo: "prueba", centavos: 0, tomas: 15, tope: "1 proyecto · hasta 15 tomas", minutos: 2 },
 ];
 
 export const planDe = (id?: string | null) => PLANES.find((p) => p.id === id);

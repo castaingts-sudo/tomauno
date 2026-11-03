@@ -993,3 +993,4 @@ body:has(.ab)::after { display: none; }
 .crew-conf { list-style: none; margin: 4px 0 8px; padding: 0; display: grid; gap: 3px; font-size: 13px; }
 .crew-conf li.llevo { color: #6fd39a; }
 .crew-conf li.no { color: #ff9a80; }
+.acc-gratis { margin-top: 4px; padding: 10px 12px; border-radius: 10px; border: 1px dashed rgba(255, 197, 61, 0.6); background: rgba(255, 197, 61, 0.08); color: var(--accent-text, #ffc53d); font-size: 13px; font-weight: 600; text-align: left; cursor: pointer; }

@@ -107,6 +107,26 @@ export default async function RevisionPage({ params }: { params: Promise<{ id: s
         </section>
       )}
 
+      {!!rev.plan?.length && (
+        <section className="rv-scene rv-plan" id="plan">
+          <span className="kicker">Plan de rodaje</span>
+          <h2>Horarios y locaciones</h2>
+          {rev.plan.map((d) => (
+            <div key={d.dia} className="rv-plan-dia">
+              <p className="rv-plan-llamado"><b>{rev.plan!.length > 1 ? `Día ${d.dia} · ` : ""}Llamado:</b> {d.llamado}</p>
+              <ol>
+                {d.items.map((it, n) => (
+                  <li key={n}>
+                    <span className="rv-plan-hora">{it.hora}</span>
+                    <div><b>{it.locacion}</b><p>{it.actividad}</p></div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ))}
+        </section>
+      )}
+
       {total !== null && total > 0 && (
         <nav className="rv-timeline" aria-label="Línea de tiempo del video">
           <div className="rv-track">

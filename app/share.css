@@ -253,3 +253,13 @@ html, body { overflow-x: hidden; }
 .tu-confirma button.on.no { background: rgba(255, 120, 90, 0.18); border-color: rgba(255, 120, 90, 0.7); }
 .tu-confirma-alt { display: flex; gap: 6px; margin-top: 8px; }
 .tu-confirma-alt input { flex: 1; min-width: 0; font: inherit; font-size: 14px; padding: 7px 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.25); color: inherit; }
+.tu-invita { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; margin: 28px 0 8px; padding: 16px 18px; border-radius: 14px; border: 1px solid rgba(255, 197, 61, 0.45); background: linear-gradient(120deg, rgba(255, 197, 61, 0.12), rgba(255, 197, 61, 0.03)); color: inherit; text-decoration: none; }
+.tu-invita b:last-child { color: #ffc53d; white-space: nowrap; }
+
+/* Plan de rodaje en el link del cliente */
+.rv-plan-llamado { margin: 6px 0 14px; }
+.rv-plan ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.rv-plan li { display: grid; grid-template-columns: 120px 1fr; gap: 14px; padding: 10px 0; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+.rv-plan li p { margin: 4px 0 0; opacity: 0.75; font-size: 14px; line-height: 1.5; }
+.rv-plan-hora { font-family: var(--f-mono, monospace); font-size: 13px; color: #ffc53d; white-space: nowrap; }
+@media (max-width: 560px) { .rv-plan li { grid-template-columns: 1fr; gap: 4px; } }
