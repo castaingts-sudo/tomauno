@@ -518,6 +518,7 @@ function Resultado({ proyecto, tab, setTab, demo, onChange, dibujando, onRedibuj
         <div className="lb-main">
           {edit && <p className="lb-editbar no-print">Modo edición: toca cualquier texto del guion, las tomas o el plan para corregirlo. Se guarda solo.</p>}
           {tab === "equipo" && !demo && <RehacerPlan proyecto={proyecto} onChange={onChange} />}
+          {tab === "rodaje" && !demo && <AjusteRodaje proyecto={proyecto} onChange={onChange} />}
           <Libro proyecto={proyecto} tab={tab} edit={edit} onChange={onChange} irA={(t) => setTab(t as Tab)} dibujando={dibujando} onRedibujar={onRedibujar} />
           <section className={tab === "compartir" ? "sec lb-sec" : "sec lb-sec hide no-print"}>
             <header className="lb-sec-head">
@@ -679,6 +680,128 @@ function LinksEquipo({ proyecto, onChange }: { proyecto: Proyecto; onChange: (p:
 }
 
 // Rehace plan, equipo, crew, locaciones y presupuesto con los recursos reales; guion y storyboard no se tocan.
+// En pleno rodaje: marcas lo que ya se grabó, escribes qué cambió y la IA rehace el resto del día.
+// Al terminar actualiza solos el link del cliente y las hojas del equipo.
+function AjusteRodaje({ proyecto, onChange }: { proyecto: Proyecto; onChange: (p: Proyecto) => void }) {
+  const p = proyecto.paquete;
+  const [abierto, setAbierto] = useState(false);
+  const [hechas, setHechas] = useState<string[]>(proyecto.rodaje?.hechas ?? []);
+  const [cambios, setCambios] = useState("");
+  const [trabajando, setTrabajando] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [resumen, setResumen] = useState(proyecto.rodaje?.cambios.at(-1)?.resumen ?? "");
+  const toggle = (id: string) => setHechas((h) => (h.includes(id) ? h.filter((x) => x !== id) : [...h, id]));
+  const ahora = () => new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", hour12: false });
+
+  async function publicar(nuevo: Proyecto) {
+    const avisos: string[] = [];
+    if (nuevo.share) {
+      const r = await fetch("/api/share", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ paquete: nuevo.paquete, id: nuevo.share.id, ownerToken: nuevo.share.ownerToken, fechaRodaje: nuevo.brief.fechaRodaje }) }).catch(() => null);
+      avisos.push(r?.ok ? "link del cliente" : "⚠ link del cliente (toca Actualizar link)");
+    }
+    if (nuevo.equipoShare) {
+      const r = await fetch("/api/equipo", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ paquete: nuevo.paquete, equipo: equipoDe(nuevo.brief), id: nuevo.equipoShare.id, ownerToken: nuevo.equipoShare.ownerToken, fechaRodaje: nuevo.brief.fechaRodaje }) }).catch(() => null);
+      avisos.push(r?.ok ? "hojas del equipo" : "⚠ hojas del equipo (toca Actualizar links)");
+    }
+    return avisos;
+  }
+
+  async function rehacer() {
+    setTrabajando(true);
+    setMsg("");
+    try {
+      const hora = ahora();
+      const res = await fetch("/api/replan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...cabecerasAcceso() },
+        body: JSON.stringify({
+          titulo: p.resumen.titulo,
+          plan: p.planRodaje,
+          tomas: p.guionTecnico.map((t) => ({ id: t.id, escena: t.escena, descripcion: t.descripcion, tipoPlano: t.tipoPlano, operador: t.operador })),
+          hechas,
+          cambios,
+          ahora: hora,
+          fecha: new Date().toLocaleDateString("es-MX", { weekday: "short", day: "numeric", month: "short" }),
+          equipo: equipoDe(proyecto.brief).map((o) => ({ nombre: o.nombre, rol: o.rol, equipo: o.equipo })),
+        }),
+      });
+      const j = (await res.json().catch(() => ({}))) as { error?: string; resumen?: string; planRodaje?: Paquete["planRodaje"] };
+      if (!res.ok || !j.planRodaje) throw new Error(j.error || `Error ${res.status}`);
+      const nuevo: Proyecto = {
+        ...proyecto,
+        planAnterior: p.planRodaje,
+        paquete: { ...p, planRodaje: j.planRodaje },
+        rodaje: { hechas, cambios: [...(proyecto.rodaje?.cambios ?? []), { hora, texto: cambios.trim(), resumen: j.resumen }] },
+      };
+      onChange(nuevo);
+      setResumen(j.resumen ?? "");
+      setCambios("");
+      const avisos = await publicar(nuevo);
+      setMsg(`Plan rehecho a las ${hora}.${avisos.length ? ` Actualizado: ${avisos.join(" y ")}.` : ""}`);
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : String(e));
+    } finally {
+      setTrabajando(false);
+    }
+  }
+
+  async function deshacer() {
+    if (!proyecto.planAnterior) return;
+    const nuevo: Proyecto = { ...proyecto, paquete: { ...p, planRodaje: proyecto.planAnterior }, planAnterior: undefined };
+    onChange(nuevo);
+    setResumen("");
+    const avisos = await publicar(nuevo);
+    setMsg(`Regresé al plan anterior.${avisos.length ? ` Actualizado: ${avisos.join(" y ")}.` : ""}`);
+  }
+
+  const historial = proyecto.rodaje?.cambios ?? [];
+  return (
+    <div className="card rehacer ajuste no-print">
+      <div className="rehacer-head">
+        <div>
+          <b>🎬 Cambios en rodaje</b>
+          <p className="muted">¿Algo no se pudo o cambió? Marca lo que ya se grabó, escribe el cambio y rehago el resto del día. El link del cliente y las hojas del equipo se actualizan solos. No gasta tomas.</p>
+        </div>
+        {!abierto && <button type="button" className="primary" onClick={() => setAbierto(true)}>Ajustar plan</button>}
+      </div>
+      {resumen && <p className="ajuste-resumen">{resumen}</p>}
+      {abierto && (
+        <>
+          <span className="lb-lab">Tomas ya grabadas ({hechas.length}/{p.guionTecnico.length})</span>
+          <div className="ajuste-tomas">
+            {p.guionTecnico.map((t) => (
+              <button key={t.id} type="button" className={hechas.includes(t.id) ? "on" : ""} onClick={() => toggle(t.id)} title={t.descripcion}>
+                {hechas.includes(t.id) ? "✓ " : ""}{t.id}
+              </button>
+            ))}
+          </div>
+          <span className="lb-lab">¿Qué cambió?</span>
+          <textarea
+            rows={3}
+            value={cambios}
+            onChange={(e) => setCambios(e.target.value)}
+            placeholder="Ej.: la 2C no se pudo por ruido; el gimnasio nos lo dan hasta las 4; Aya llega a las 5; está nublado; se suma una toma del mural…"
+          />
+          <div className="ajuste-acciones">
+            <button type="button" className="primary" onClick={rehacer} disabled={trabajando || (!cambios.trim() && !hechas.length)}>
+              {trabajando ? "Rehaciendo el resto del día… (menos de 1 min)" : "Rehacer el resto del día"}
+            </button>
+            {proyecto.planAnterior && !trabajando && <button type="button" onClick={deshacer}>↶ Deshacer último ajuste</button>}
+            <button type="button" onClick={() => setAbierto(false)} disabled={trabajando}>Cerrar</button>
+          </div>
+        </>
+      )}
+      {msg && <p className="muted">{msg}</p>}
+      {historial.length > 0 && (
+        <details className="ajuste-hist">
+          <summary>Ajustes de hoy ({historial.length})</summary>
+          <ul>{historial.map((c, i) => <li key={i}><b>{c.hora}</b> {c.texto || "Tomas marcadas"}{c.resumen ? ` → ${c.resumen}` : ""}</li>)}</ul>
+        </details>
+      )}
+    </div>
+  );
+}
+
 function RehacerPlan({ proyecto, onChange }: { proyecto: Proyecto; onChange: (p: Proyecto) => void }) {
   const [abierto, setAbierto] = useState(!proyecto.brief.recursos);
   const [recursos, setRecursos] = useState<Recursos | undefined>(proyecto.brief.recursos);

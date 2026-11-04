@@ -147,5 +147,7 @@ export interface Proyecto {
   share?: { id: string; ownerToken: string };
   equipoShare?: { id: string; ownerToken: string };
   checks?: number[]; // índices del checklist ya hechos
+  rodaje?: { hechas: string[]; cambios: { hora: string; texto: string; resumen?: string }[] }; // ajustes en pleno rodaje
+  planAnterior?: Jornada[]; // para deshacer el último ajuste
   clima?: { nombre: string; lat: number; lon: number }; // lugar para el pronóstico del plan de rodaje
 }

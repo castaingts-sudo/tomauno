@@ -994,3 +994,13 @@ body:has(.ab)::after { display: none; }
 .crew-conf li.llevo { color: #6fd39a; }
 .crew-conf li.no { color: #ff9a80; }
 .acc-gratis { margin-top: 4px; padding: 10px 12px; border-radius: 10px; border: 1px dashed rgba(255, 197, 61, 0.6); background: rgba(255, 197, 61, 0.08); color: var(--accent-text, #ffc53d); font-size: 13px; font-weight: 600; text-align: left; cursor: pointer; }
+
+/* Cambios en rodaje */
+.ajuste { border-color: var(--accent, #ffb000); }
+.ajuste-tomas { display: flex; flex-wrap: wrap; gap: 6px; }
+.ajuste-tomas button { padding: 6px 10px; font: 600 12px var(--mono, monospace); min-width: 44px; }
+.ajuste-tomas button.on { background: var(--accent, #ffb000); color: #1a1200; border-color: transparent; }
+.ajuste textarea { width: 100%; }
+.ajuste-acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+.ajuste-resumen { margin: 0; padding: 10px 12px; border-left: 3px solid var(--accent, #ffb000); background: color-mix(in srgb, var(--accent, #ffb000) 8%, transparent); }
+.ajuste-hist ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; }
