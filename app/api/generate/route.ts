@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { SYSTEM_PROMPT, etapaPrompt, userPrompt } from "@/lib/prompt";
 import { samplePaquete } from "@/lib/sample";
 import { limiteDe, permiso, registrarUso } from "@/lib/acceso";
+import { anotar } from "@/lib/actividad";
 import type { Brief } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -24,6 +25,7 @@ export async function POST(req: Request) {
   }
   const p = await permiso(req, etapa === 1 ? 1 : 0);
   if (p instanceof Response) return p;
+  if (etapa === 1) await anotar(req, "proyecto", { email: p.acceso?.email || (p.admin ? "admin" : undefined), detalle: brief.idea.trim().slice(0, 120) });
   const lim = limiteDe(p);
   const limite =
     etapa === 1 && (lim.tomas || lim.minutos)

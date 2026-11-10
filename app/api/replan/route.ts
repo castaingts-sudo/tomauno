@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { permiso } from "@/lib/acceso";
+import { anotar } from "@/lib/actividad";
 import type { Jornada } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -40,6 +41,7 @@ export async function POST(req: Request) {
   if (!b.cambios?.trim() && !b.hechas?.length) return Response.json({ error: "Escribe qué cambió o marca las tomas que ya se grabaron." }, { status: 400 });
   const p = await permiso(req, 0);
   if (p instanceof Response) return p;
+  await anotar(req, "replan", { email: p.acceso?.email || (p.admin ? "admin" : undefined), detalle: b.titulo });
   if (!process.env.ANTHROPIC_API_KEY) return Response.json({ error: "Falta la clave de la IA." }, { status: 503 });
 
   const pendientes = b.tomas.filter((t) => !b.hechas.includes(t.id));
