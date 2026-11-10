@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { STORYBOARD_PROMPT, STORYBOARD_SCHEMA } from "@/lib/prompt";
 import { dibujar, hayGenerador, type Contexto } from "@/lib/imagen";
 import { permiso, registrarUso } from "@/lib/acceso";
+import { anotar } from "@/lib/actividad";
 import type { Plano } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -17,6 +18,12 @@ export async function POST(req: Request) {
   if (todos.length > 8) return Response.json({ error: "Máximo 8 tomas por llamada." }, { status: 400 });
   const pm = await permiso(req, 0);
   if (pm instanceof Response) return pm;
+  // Tope de dibujos por cuenta (3 por toma del plan, para redibujar): sin esto una cuenta gratis podía dibujar sin fin.
+  if (pm.acceso && pm.acceso.dibujos + todos.length > pm.acceso.tomas * 3) {
+    await anotar(req, "dibujos-bloqueados", { email: pm.acceso.email, detalle: `pidió ${todos.length}, ya lleva ${pm.acceso.dibujos} de ${pm.acceso.tomas * 3}` });
+    return Response.json({ error: "Llegaste al tope de dibujos de tu plan. Compra un paquete extra para seguir dibujando.", codigo: "sin-tomas" }, { status: 402 });
+  }
+  await anotar(req, "dibujos", { email: pm.acceso?.email || (pm.admin ? "admin" : undefined), detalle: `${todos.length} · ${contexto?.titulo || "sin título"}` });
 
   const listos: { planoId: string; imagen?: string; svg?: string }[] = [];
   let planos = todos;

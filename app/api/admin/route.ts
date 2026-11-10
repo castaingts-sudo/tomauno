@@ -1,6 +1,7 @@
 import { esAdmin, listarAccesos, listarUsos, restantes } from "@/lib/acceso";
 import { planDe } from "@/lib/planes";
 import { hayStripe } from "@/lib/stripe";
+import { anotar, fallo, frenado, ultimas } from "@/lib/actividad";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -8,8 +9,12 @@ export const dynamic = "force-dynamic";
 // Métricas para el panel del administrador.
 export async function GET(req: Request) {
   if (!process.env.TOMA_ADMIN_CODE) return Response.json({ error: "Falta poner TOMA_ADMIN_CODE en Vercel." }, { status: 503 });
-  if (!esAdmin(req)) return Response.json({ error: "Clave incorrecta." }, { status: 401 });
-  const [accesos, usos] = await Promise.all([listarAccesos(), listarUsos()]);
+  if (await frenado(req, "admin", 8)) return Response.json({ error: "Demasiados intentos. Espera 15 minutos." }, { status: 429 });
+  if (!esAdmin(req)) {
+    await Promise.all([fallo(req, "admin"), anotar(req, "admin-fallido")]);
+    return Response.json({ error: "Clave incorrecta." }, { status: 401 });
+  }
+  const [accesos, usos, bitacora] = await Promise.all([listarAccesos(), listarUsos(), ultimas(200)]);
   const pagos = accesos.flatMap((a) => a.pagos.map((p) => ({ ...p, email: a.email, nombre: a.nombre })));
   const mes = new Date().toISOString().slice(0, 7);
   const suma = (xs: { centavos: number }[]) => xs.reduce((s, p) => s + p.centavos, 0) / 100;
@@ -29,6 +34,7 @@ export async function GET(req: Request) {
     clientes: accesos
       .sort((a, b) => b.creado.localeCompare(a.creado))
       .map((a) => ({ email: a.email, nombre: a.nombre, plan: planDe(a.plan)?.nombre || a.plan, mensual: planDe(a.plan)?.tipo === "mensual", activo: a.activo, creado: a.creado, tomas: a.tomas, usadas: a.usadas, restantes: restantes(a), proyectos: a.proyectos, dibujos: a.dibujos, pagado: suma(a.pagos) })),
+    accesos: bitacora,
     pagos: pagos.sort((a, b) => b.fecha.localeCompare(a.fecha)).slice(0, 50),
     usos: usos.sort((a, b) => b.fecha.localeCompare(a.fecha)).slice(0, 60).map((u) => ({ ...u, cliente: u.token === "admin" ? "Tú (admin)" : u.token === "libre" ? "Sin cobro" : accesos.find((a) => a.token === u.token)?.email || "—" })),
   });

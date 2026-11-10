@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import mammoth from "mammoth";
 import { BRIEF_FIELDS_SCHEMA, EXTRACT_PROMPT } from "@/lib/prompt";
 import { permiso } from "@/lib/acceso";
+import { anotar } from "@/lib/actividad";
 import type { Brief } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -17,6 +18,7 @@ type Campos = Omit<Brief, "archivo" | "documento" | "pdf">;
 export async function POST(req: Request) {
   const pm = await permiso(req, 1);
   if (pm instanceof Response) return pm;
+  await anotar(req, "brief", { email: pm.acceso?.email || (pm.admin ? "admin" : undefined) });
   const form = await req.formData();
   const file = form.get("file");
   if (!(file instanceof File)) return Response.json({ error: "No se recibió archivo." }, { status: 400 });

@@ -3,6 +3,7 @@ import { guardarAcceso, nuevoToken, type Acceso } from "@/lib/acceso";
 import { planDe } from "@/lib/planes";
 import { leerUsuario, MAIL_RE, normal, ponerClave } from "@/lib/usuarios";
 import { readJson, StoreNotConfigured, writeJson } from "@/lib/store";
+import { anotar } from "@/lib/actividad";
 
 export const runtime = "nodejs";
 
@@ -19,7 +20,10 @@ export async function POST(req: Request) {
     const dia = new Date().toISOString().slice(0, 10);
     const rIp = `pruebas-ip/${dia}/${createHash("sha256").update(ip).digest("hex").slice(0, 24)}.json`;
     const usadas = (await readJson<{ n: number }>(rIp))?.n ?? 0;
-    if (usadas >= 3) return Response.json({ error: "Ya se crearon varias cuentas desde esta conexión hoy. Intenta mañana o elige un plan." }, { status: 429 });
+    if (usadas >= 3) {
+      await anotar(req, "cuenta-gratis-bloqueada", { email: correo, detalle: "más de 3 cuentas desde la misma conexión" });
+      return Response.json({ error: "Ya se crearon varias cuentas desde esta conexión hoy. Intenta mañana o elige un plan." }, { status: 429 });
+    }
     const a: Acceso = {
       token: nuevoToken(), plan: plan.id, email: correo, nombre: String(nombre || "").trim().slice(0, 80),
       tomas: plan.tomas, usadas: 0, proyectos: 0, dibujos: 0, activo: true, creado: new Date().toISOString(),
@@ -28,6 +32,7 @@ export async function POST(req: Request) {
     await guardarAcceso(a);
     await ponerClave(correo, a.token, clave);
     await writeJson(rIp, { n: usadas + 1 });
+    await anotar(req, "cuenta-gratis", { email: correo, detalle: a.nombre || undefined });
     return Response.json({ token: a.token, email: correo });
   } catch (err) {
     return Response.json({ error: err instanceof StoreNotConfigured ? err.message : "No se pudo crear la cuenta." }, { status: 500 });

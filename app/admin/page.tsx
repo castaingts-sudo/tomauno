@@ -13,7 +13,15 @@ interface Datos {
   clientes: { email: string; nombre: string; plan: string; mensual: boolean; activo: boolean; creado: string; tomas: number; usadas: number; restantes: number; proyectos: number; dibujos: number; pagado: number }[];
   pagos: { fecha: string; centavos: number; concepto: string; email: string; nombre: string }[];
   usos: { fecha: string; tipo: string; cantidad: number; titulo?: string; costo: number; cliente: string }[];
+  accesos?: { fecha: string; evento: string; email?: string; detalle?: string; ip: string; lugar?: string; navegador?: string }[];
 }
+
+const EVENTO: Record<string, string> = {
+  entrar: "Entró", "entrar-fallido": "Contraseña mal", "cuenta-gratis": "Cuenta gratis", "cuenta-gratis-bloqueada": "Cuenta gratis frenada",
+  "link-correo": "Pidió link", admin: "Admin", "admin-fallido": "Clave admin mal", proyecto: "Generó proyecto", dibujos: "Dibujos",
+  "dibujos-bloqueados": "Dibujos frenados", replan: "Cambios en rodaje", brief: "Leyó brief", bloqueado: "Sin plan",
+};
+const alerta = (e: string) => /fallido|bloquead/.test(e);
 
 const mxn = (n: number) => `$${n.toLocaleString("es-MX", { maximumFractionDigits: 0 })}`;
 const fecha = (s: string) => new Date(s).toLocaleString("es-MX", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
@@ -126,6 +134,26 @@ export default function Admin() {
             ))}
             {!datos.pagos.length && <li className="ad-vacio">Sin pagos todavía.</li>}
           </ul>
+        </section>
+        <section className="ad-sec" style={{ gridColumn: "1 / -1" }}>
+          <h2>Accesos</h2>
+          <div className="ad-tabla">
+            <table>
+              <thead><tr><th>Cuándo</th><th>Qué</th><th>Quién</th><th>Desde</th><th>Detalle</th></tr></thead>
+              <tbody>
+                {(datos.accesos || []).map((a, i) => (
+                  <tr key={i} style={alerta(a.evento) ? { color: "var(--accent, #f5a623)" } : undefined}>
+                    <td>{fecha(a.fecha)}</td>
+                    <td>{EVENTO[a.evento] || a.evento}</td>
+                    <td>{a.email || "—"}</td>
+                    <td>{a.ip}<small>{[a.lugar, a.navegador].filter(Boolean).join(" · ")}</small></td>
+                    <td style={{ whiteSpace: "normal", maxWidth: 360 }}>{a.detalle || ""}</td>
+                  </tr>
+                ))}
+                {!datos.accesos?.length && <tr><td colSpan={5} className="ad-vacio">Sin accesos registrados todavía (se anotan desde esta versión).</td></tr>}
+              </tbody>
+            </table>
+          </div>
         </section>
         <section className="ad-sec">
           <h2>Actividad</h2>

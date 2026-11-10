@@ -3,6 +3,7 @@ import { COSTO_DIBUJO_MXN, COSTO_PROYECTO_MXN, planDe } from "./planes";
 import { hayStripe } from "./stripe";
 import { listJson, readJson, writeJson } from "./store";
 import { enviarCorreo, plantilla, SITIO } from "./correo";
+import { anotar } from "./actividad";
 
 // Acceso pagado al estudio: cada compra da un token con tomas; los proyectos las descuentan.
 // El cobro solo se exige cuando Stripe está configurado; el administrador entra con TOMA_ADMIN_CODE.
@@ -53,7 +54,10 @@ export async function permiso(req: Request, minimo = 1): Promise<Permiso | Respo
   if (!hayStripe()) return { libre: true, admin: false };
   const token = req.headers.get("x-toma-acceso") || "";
   const a = token ? await leerAcceso(token) : null;
-  if (!a || !a.activo) return Response.json({ error: "Necesitas un plan para generar proyectos.", codigo: "sin-acceso" }, { status: 402 });
+  if (!a || !a.activo) {
+    await anotar(req, "bloqueado", { email: a?.email, detalle: `${new URL(req.url).pathname} sin plan activo` });
+    return Response.json({ error: "Necesitas un plan para generar proyectos.", codigo: "sin-acceso" }, { status: 402 });
+  }
   if (restantes(a) < minimo) return Response.json({ error: "Ya usaste todas tus tomas. Compra un paquete extra o cambia de plan.", codigo: "sin-tomas" }, { status: 402 });
   return { libre: false, admin: false, acceso: a };
 }

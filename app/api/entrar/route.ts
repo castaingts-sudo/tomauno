@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { cuentaDe, leerAcceso, listarAccesos } from "@/lib/acceso";
 import { enviarCorreo, hayCorreo, plantilla } from "@/lib/correo";
 import { readJson, StoreNotConfigured, writeJson } from "@/lib/store";
+import { anotar, fallo, frenado } from "@/lib/actividad";
 
 export const runtime = "nodejs";
 
@@ -15,6 +16,9 @@ export async function POST(req: Request) {
   const { email, motivo } = (await req.json().catch(() => ({}))) as { email?: string; motivo?: string };
   const clave = motivo === "clave";
   if (!email || !MAIL_RE.test(email)) return Response.json({ error: "Escribe un correo válido." }, { status: 400 });
+  if (await frenado(req, "correo", 5)) return Response.json({ error: "Ya pediste varios links. Espera 15 minutos." }, { status: 429 });
+  await fallo(req, "correo");
+  await anotar(req, "link-correo", { email: email.trim().toLowerCase(), detalle: clave ? "recuperar contraseña" : "entrar" });
   if (!hayCorreo()) return Response.json({ error: "El envío de correos todavía no está configurado." }, { status: 503 });
   try {
     const a = cuentaDe(await listarAccesos(), email);
@@ -41,6 +45,7 @@ export async function GET(req: Request) {
   const e = await readJson<Entrada>(`entradas/${id}.json`);
   if (!e || e.usado || e.vence < new Date().toISOString()) return Response.json({ error: "Ese link ya se usó o venció. Pide otro." }, { status: 410 });
   await writeJson(`entradas/${id}.json`, { ...e, usado: true });
+  await anotar(req, "entrar", { email: e.email, detalle: "link de un solo uso" });
   return Response.json({ token: e.token, email: e.email });
 }
 
